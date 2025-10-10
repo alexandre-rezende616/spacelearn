@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "spacelearn",
+    "name": "Spacelearn",
     "slug": "spacelearn",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -38,7 +38,11 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-font",
+      "expo-asset",
+      "expo-audio",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

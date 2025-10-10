@@ -1,50 +1,65 @@
-# Welcome to your Expo app 👋
+# SpaceLearn (Expo + Supabase)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App em React Native com Expo Router e Supabase, focado em conteudos de espaco/ciencia para alunos e professores.
 
-## Get started
+## Como rodar
 
-1. Install dependencies
+- Instalar dependencias
+  - `npm install`
 
-   ```bash
-   npm install
-   ```
+- Iniciar o app (limpando cache)
+  - `npx expo start -c`
 
-2. Start the app
+- Abrir no emulador/dispositivo
+  - Android: tecle `a`
+  - iOS (Mac): tecle `i`
+  - Web: tecle `w`
 
-   ```bash
-   npx expo start
-   ```
+## Configura��o do Supabase
 
-In the output, you'll find options to open the app in a
+- Arquivo do cliente: `src/lib/supabaseClient.ts`
+  - Usa `AsyncStorage`, sessao persistente e URL/KEY ja estao configuradas.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Tabela de perfis: `supabase/profiles.sql`
+  - Estrutura simples com `id`, `role` (`aluno` | `professor`), `nome` e RLS habilitado.
+  - Politicas permitem o usuario logado ler/alterar o proprio perfil.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Fluxo de autenticacao
+  - Cadastro (`app/auth/signup.tsx`): salva o `role` no `user_metadata` e faz `upsert` no perfil somente se houver sessao ativa (respeitando RLS). Se precisar confirmar e-mail, o upsert acontece no login.
+  - Login (`app/auth/login.tsx`): pega o `role` do `profiles` com fallback no `user_metadata.role`, garante o registro em `profiles` com a sessao ativa e redireciona para o grupo correto.
 
-## Get a fresh project
+## Navega��o e perfis
 
-When you're ready, run:
+- Expo Router por pastas (file-based routing)
+  - Grupo do aluno: `app/(aluno)`
+  - Grupo do professor: `app/(professor)`
+  - Auth: `app/auth`
 
-```bash
-npm run reset-project
-```
+- Root layout: `app/_layout.tsx`
+  - Detecta sessao e direciona por `role` (aluno/professor) no load inicial e quando a sess�o mudar.
+  - Sem sessao: vai para `/auth/login`.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## �udio (sem expo-av)
 
-## Learn more
+- Aviso: `expo-av` esta deprecado no SDK 54.
+- O projeto usa `expo-audio` para tocar efeitos curtos.
+- Exemplo real no app: `app/(aluno)/play/[lessonId].tsx`
+  - `createAudioPlayer(require('...mp3')).play()` e depois `player.remove()` para liberar.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Scripts �teis
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `npm install`  instala as depend�ncias.
+- `npx expo start -c` �inicia o app e limpa o cache.
+- `npm run reset-project` �comando do template (nao vamos usar no dia a dia).
 
-## Join the community
+## Dicas r�pidas
 
-Join our community of developers creating universal apps.
+- Se o TypeScript reclamar do JSX: o Expo pode ajustar o `tsconfig.json` automaticamente e colocar `extends: "expo/tsconfig.base"`. Isso é normal.
+- Se aparecer erro de RLS ao salvar perfil: garanta que o upsert seja feito quando houver sessao (o app ja faz isso no login/cadastro).
+- Se algo quebrar apos updates de pacotes: pare o bundler, rode `npm install`, depois `npx expo start -c`.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Roadmapzinho
+
+- [ ] Melhorar telas de professor (turmas/missoes)
+- [ ] Conteudo dinamico de missoes/quiz via Supabase
+- [ ] Ajustes finos de UI/UX e feedbacks de progresso
