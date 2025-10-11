@@ -1,16 +1,6 @@
-// iuri querido painel do professor com acoes futuras
-import { Text, View } from "react-native";
-import { colors, spacing } from "../../src/theme/tokens";
+import { Redirect } from "expo-router";
 
-export default function PainelProfessor() {
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.bgLight, padding: spacing.lg }}>
-      <Text style={{ fontFamily: "Inter-Bold", fontSize: 22, color: colors.navy900 }}>
-        Painel do Professor
-      </Text>
-      <Text style={{ marginTop: spacing.sm, color: colors.navy800 }}>
-        Acompanhe turmas, publique lições e atribua medalhas.
-      </Text>
-    </View>
-  );
+export default function Index() {
+  return <Redirect href="/(professor)/painel" />;
 }
+

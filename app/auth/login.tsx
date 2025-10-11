@@ -1,11 +1,10 @@
-import { Link, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { Link } from "expo-router";
+import { useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { supabase } from "../../src/lib/supabaseClient";
 import { colors, radii, spacing } from "../../src/theme/tokens";
 
 export default function LoginScreen() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,22 +38,6 @@ export default function LoginScreen() {
     }
   }
 
-  // Se tiver uma sessão vai busca o role e redirecionar
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const userId = data.session?.user?.id;
-      if (userId) {
-        const role = await getUserRole(userId);
-        await ensureProfile(userId, data.session?.user?.email, role);
-        console.log("Perfil detectado (session):", role);
-        Alert.alert("Perfil detectado", role);
-        if (role === "professor") router.replace("/(professor)");
-        else router.replace("/(aluno)");
-      }
-    })();
-  }, []);
-
   async function handleSignIn() {
     try {
       setLoading(true);
@@ -66,18 +49,12 @@ export default function LoginScreen() {
       await ensureProfile(userId, email, role);
       console.log("Perfil detectado (login):", role);
       Alert.alert("Login efetuado", `Perfil: ${role}`);
-      if (role === "professor") router.replace("/(professor)");
-      else router.replace("/(aluno)");
+      // Redirecionamento ocorre automaticamente via onAuthStateChange no layout raiz
     } catch (error: any) {
       Alert.alert("Erro no login", error.message);
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.replace("/auth/login");
   }
 
   return (
@@ -139,3 +116,4 @@ export default function LoginScreen() {
     </View>
   );
 }
+

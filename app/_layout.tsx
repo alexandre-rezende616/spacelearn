@@ -1,15 +1,25 @@
 // Root layout com provider de tema e roteamento por perfil
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, useRootNavigationState, type Href } from "expo-router";
 import { ThemeProvider as NavigationThemeProvider, DefaultTheme } from "@react-navigation/native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../src/lib/supabaseClient";
 import { useAuth } from "../src/store/useAuth";
 import { StatusBar } from "expo-status-bar";
 import { ThemeProvider } from "../src/theme/ThemeProvider";
+import { View, StyleSheet } from "react-native";
+import LoadingScreen from "./loading";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 export default function RootLayout() {
-  const { setUser, fetchUser } = useAuth();
+  const { setUser } = useAuth();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const navState = useRootNavigationState();
+
+  function safeReplace(path: Href) {
+    if (!navState?.key) return;
+    requestAnimationFrame(() => router.replace(path));
+  }
 
   async function routeByRole(userId: string) {
     try {
@@ -18,49 +28,82 @@ export default function RootLayout() {
         .select("role")
         .eq("id", userId)
         .maybeSingle();
-      const role = (data?.role as "aluno" | "professor" | undefined) ?? "aluno";
-      if (error) {
-        router.replace("/(aluno)");
-        return;
+
+      let role = (data?.role as "aluno" | "professor" | undefined);
+
+      if (error || !role) role = "aluno"; // fallback
+
+      if (role === "professor") {
+        safeReplace("/(professor)");
+      } else {
+        safeReplace("/(aluno)");
       }
-      if (role === "professor") router.replace("/(professor)");
-      else router.replace("/(aluno)");
-    } catch {
-      router.replace("/(aluno)");
+    } catch (err) {
+      console.log("Erro ao verificar role:", err);
+      safeReplace("/auth/login");
     }
   }
 
   useEffect(() => {
-    // Checa sessão inicial e direciona por role
-    (async () => {
-      await fetchUser();
-      const { data } = await supabase.auth.getSession();
-      const userId = data.session?.user?.id;
-      if (userId) await routeByRole(userId);
-      else router.replace("/auth/login");
-    })();
+    if (!navState?.key) return;
+    let mounted = true;
 
-    // Ouve mudanças de sessão e direciona por role
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user?.id) routeByRole(session.user.id);
-      else router.replace("/auth/login");
+    async function initSession() {
+      try {
+        // verifica sessão inicial
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) throw error;
+
+        const session = data?.session;
+        const user = session?.user ?? null;
+
+        setUser(user);
+
+        if (user?.id) {
+          await routeByRole(user.id);
+        } else {
+          safeReplace("/auth/login");
+        }
+      } catch (err) {
+        console.log("Erro na verificação de sessão:", err);
+        safeReplace("/auth/login");
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    }
+
+    initSession();
+
+    // ouve mudanças de sessão (login/logout)
+    const { data: listener } = supabase.auth.onAuthStateChange((
+      _event: AuthChangeEvent,
+      session: Session | null,
+    ) => {
+      const user = session?.user ?? null;
+      setUser(user);
+
+      if (user?.id) routeByRole(user.id);
+      else safeReplace("/auth/login");
     });
 
     return () => {
-      subscription.unsubscribe();
+      mounted = false;
+      listener.subscription.unsubscribe();
     };
-  }, [router, setUser, fetchUser]);
+  }, [navState?.key]);
 
   return (
     <ThemeProvider>
       <NavigationThemeProvider value={DefaultTheme}>
         <Stack screenOptions={{ headerShown: false }} />
+        {isLoading && (
+          <View style={StyleSheet.absoluteFillObject}>
+            <LoadingScreen />
+          </View>
+        )}
         <StatusBar style="auto" />
       </NavigationThemeProvider>
     </ThemeProvider>
   );
 }
-
