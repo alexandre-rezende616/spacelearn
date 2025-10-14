@@ -15,7 +15,7 @@ App em React Native com Expo Router e Supabase, focado em conteudos de espaco/ci
   - iOS (Mac): tecle `i`
   - Web: tecle `w`
 
-## Configura��o do Supabase
+## Configuração do Supabase
 
 - Arquivo do cliente: `src/lib/supabaseClient.ts`
   - Usa `AsyncStorage`, sessao persistente e URL/KEY ja estao configuradas.
@@ -28,7 +28,7 @@ App em React Native com Expo Router e Supabase, focado em conteudos de espaco/ci
   - Cadastro (`app/auth/signup.tsx`): salva o `role` no `user_metadata` e faz `upsert` no perfil somente se houver sessao ativa (respeitando RLS). Se precisar confirmar e-mail, o upsert acontece no login.
   - Login (`app/auth/login.tsx`): pega o `role` do `profiles` com fallback no `user_metadata.role`, garante o registro em `profiles` com a sessao ativa e redireciona para o grupo correto.
 
-## Navega��o e perfis
+## Navegação e perfis
 
 - Expo Router por pastas (file-based routing)
   - Grupo do aluno: `app/(aluno)`
@@ -39,20 +39,20 @@ App em React Native com Expo Router e Supabase, focado em conteudos de espaco/ci
   - Detecta sessao e direciona por `role` (aluno/professor) no load inicial e quando a sess�o mudar.
   - Sem sessao: vai para `/auth/login`.
 
-## �udio (sem expo-av)
+## audio (sem expo-av)
 
 - Aviso: `expo-av` esta deprecado no SDK 54.
 - O projeto usa `expo-audio` para tocar efeitos curtos.
 - Exemplo real no app: `app/(aluno)/play/[lessonId].tsx`
   - `createAudioPlayer(require('...mp3')).play()` e depois `player.remove()` para liberar.
 
-## Scripts �teis
+## Scripts uteis
 
-- `npm install`  instala as depend�ncias.
-- `npx expo start -c` �inicia o app e limpa o cache.
-- `npm run reset-project` �comando do template (nao vamos usar no dia a dia).
+- `npm install`  instala as dependencias.
+- `npx expo start -c` inicia o app e limpa o cache.
+- `npm run reset-project` comando do template (nao vamos usar no dia a dia).
 
-## Dicas r�pidas
+## Dicas rápidas
 
 - Se o TypeScript reclamar do JSX: o Expo pode ajustar o `tsconfig.json` automaticamente e colocar `extends: "expo/tsconfig.base"`. Isso é normal.
 - Se aparecer erro de RLS ao salvar perfil: garanta que o upsert seja feito quando houver sessao (o app ja faz isso no login/cadastro).
