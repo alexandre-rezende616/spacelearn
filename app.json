@@ -30,11 +30,16 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          // Use logo variant intended for white background
+          "image": "./assets/images/logos/logo branca.jpg",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
+            // Dark background remains black; white-background variant provides good contrast
+            "image": "./assets/images/logos/logo branca.jpg",
+            "imageWidth": 200,
+            "resizeMode": "contain",
             "backgroundColor": "#000000"
           }
         }

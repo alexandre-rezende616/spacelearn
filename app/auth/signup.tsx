@@ -38,7 +38,7 @@ export default function SignUpScreen() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { role } },
+        options: { data: { role, nome } },
       });
       if (error) throw error;
 
@@ -191,4 +191,3 @@ export default function SignUpScreen() {
     </View>
   );
 }
-

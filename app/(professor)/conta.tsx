@@ -23,7 +23,16 @@ export default function ContaProfessor() {
           .select("nome")
           .eq("id", user.id)
           .maybeSingle();
-        setProfile({ nome: (data?.nome as string | null) ?? null });
+        let nome = (data?.nome as string | null) ?? null;
+        if (!nome) {
+          const { data: userData } = await supabase.auth.getUser();
+          const metaNome = (userData.user?.user_metadata?.nome as string | undefined) ?? undefined;
+          if (metaNome && metaNome.trim().length > 0) {
+            nome = metaNome.trim();
+            await supabase.from("profiles").upsert({ id: user.id, nome }, { onConflict: "id" });
+          }
+        }
+        setProfile({ nome });
       } catch {
         setProfile({ nome: null });
       }
@@ -81,4 +90,3 @@ export default function ContaProfessor() {
     </View>
   );
 }
-

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { supabase } from "../../src/lib/supabaseClient";
 import { colors, radii, spacing } from "../../src/theme/tokens";
+import Logo from "../../components/Logo";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -27,11 +28,13 @@ export default function LoginScreen() {
     }
   }
 
-  async function ensureProfile(userId: string, nome: string | undefined, role: "aluno" | "professor") {
+  async function ensureProfile(userId: string, role: "aluno" | "professor", nomeFromMeta?: string | null) {
     try {
+      const payload: any = { id: userId, role };
+      if (nomeFromMeta && String(nomeFromMeta).trim().length > 0) payload.nome = String(nomeFromMeta).trim();
       const { error } = await supabase
         .from("profiles")
-        .upsert({ id: userId, role, nome }, { onConflict: "id" });
+        .upsert(payload, { onConflict: "id" });
       if (error) console.log("Erro ao salvar perfil:", error.message);
     } catch (e: any) {
       console.log("Exceção ao salvar perfil:", e?.message);
@@ -46,7 +49,9 @@ export default function LoginScreen() {
       const userId = data.user?.id ?? (await supabase.auth.getUser()).data.user?.id;
       if (!userId) throw new Error("Não foi possível obter o usuário após login");
       const role = await getUserRole(userId);
-      await ensureProfile(userId, email, role);
+      const { data: userData } = await supabase.auth.getUser();
+      const nomeFromMeta = (userData.user?.user_metadata?.nome as string | undefined) ?? null;
+      await ensureProfile(userId, role, nomeFromMeta);
       console.log("Perfil detectado (login):", role);
       Alert.alert("Login efetuado", `Perfil: ${role}`);
       // Redirecionamento ocorre automaticamente via onAuthStateChange no layout raiz
@@ -59,6 +64,10 @@ export default function LoginScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bgLight, justifyContent: "center", padding: spacing.lg }}>
+      <View style={{ alignItems: "center", marginBottom: spacing.lg }}>
+        {/* Vertical logo suited for white background, larger for the login */}
+        <Logo size={96} background="white" orientation="vertical" />
+      </View>
       <Text style={{ fontSize: 28, fontFamily: "Inter-Bold", color: colors.navy900, textAlign: "center", marginBottom: spacing.lg }}>
         Bem-vindo(a)
       </Text>
@@ -116,4 +125,5 @@ export default function LoginScreen() {
     </View>
   );
 }
+
 

@@ -2,11 +2,23 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { colors } from "../../src/theme/tokens";
+import Logo from "../../components/Logo";
 
 // define rotas e icones das tabs do aluno
 export default function AlunoTabs() {
   return (
-    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.brandPink, tabBarInactiveTintColor: colors.navy800 }}>
+    <Tabs
+      screenOptions={{
+        headerShown: true,
+        headerTitle: "",
+        headerStyle: { backgroundColor: colors.bgLight },
+        headerShadowVisible: false,
+        // Use logo configured for white background, slightly larger
+        headerRight: () => <Logo size={32} background="white" />,
+        tabBarActiveTintColor: colors.brandPink,
+        tabBarInactiveTintColor: colors.navy800,
+      }}
+    >
       <Tabs.Screen name="index" options={{ title: "Painel", tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} /> }} />
       <Tabs.Screen name="lessons" options={{ title: "Missões", tabBarIcon: ({ color, size }) => <Ionicons name="planet" color={color} size={size} /> }} />
       <Tabs.Screen name="badges" options={{ title: "Medalhas", tabBarIcon: ({ color, size }) => <Ionicons name="trophy" color={color} size={size} /> }} />

@@ -1,4 +1,5 @@
-import { ActivityIndicator, Image, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import Logo from "../components/Logo";
 
 export default function LoadingScreen() {
   return (
@@ -11,13 +12,9 @@ export default function LoadingScreen() {
         gap: 16,
       }}
     >
-      <Image
-        // Project-root alias path
-        source={require("@/assets/images/icon.png")}
-        style={{ width: 96, height: 96, resizeMode: "contain" }}
-      />
+      {/* Use logo configured for white background */}
+      <Logo size={96} background="white" />
       <ActivityIndicator size="large" color="#0A84FF" />
     </View>
   );
 }
-
