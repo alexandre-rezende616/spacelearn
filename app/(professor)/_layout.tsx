@@ -1,4 +1,4 @@
-// Abas do perfil de professor (Tabs)
+﻿// Abas do perfil de professor (Tabs)
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { colors } from "../../src/theme/tokens";
@@ -40,7 +40,7 @@ export default function ProfessorTabs() {
       <Tabs.Screen
         name="missoes"
         options={{
-          title: "Missões",
+          title: "MissÃµes",
           tabBarIcon: ({ color, size }) => <Ionicons name="flag" color={color} size={size} />,
         }}
       />
@@ -54,7 +54,7 @@ export default function ProfessorTabs() {
       <Tabs.Screen
         name="diario"
         options={{
-          title: "Diário",
+          title: "DiÃ¡rio",
           tabBarIcon: ({ color, size }) => <Ionicons name="book" color={color} size={size} />,
         }}
       />
@@ -68,3 +68,4 @@ export default function ProfessorTabs() {
     </Tabs>
   );
 }
+

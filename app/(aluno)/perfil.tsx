@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { View, Text, TouchableOpacity } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -8,6 +8,7 @@ import { useAuth } from "../../src/store/useAuth";
 import { useUserProgress } from "../../src/store/useUserProgress";
 
 import { supabase } from "../../src/lib/supabaseClient";
+import AccountCard from "../../components/AccountCard";
 export default function PerfilAluno() {
   const router = useRouter();
   const user = useAuth((s) => s.user);
@@ -44,7 +45,7 @@ export default function PerfilAluno() {
 
   async function handleLogout() {
     await signOut();
-    // Usar caminho absoluto evita problemas de resolução relativa
+    // Usar caminho absoluto evita problemas de resoluÃ§Ã£o relativa
     router.replace("/auth/login");
   }
 
@@ -54,19 +55,16 @@ export default function PerfilAluno() {
         entering={FadeInUp.duration(350)}
         style={{ alignItems: "center", gap: spacing.lg }}
       >
-        <Text style={{ fontFamily: fonts.bold, fontSize: fontSizes.h2, color: colors.navy900 }}>
-          Meu Perfil
-        </Text>
-
-        <View style={{ alignItems: "center", gap: spacing.xs }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: fontSizes.md, color: colors.navy800 }}>
-            {nome ?? "Aluno"}
-          </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: fontSizes.sm, color: colors.navy800 }}>
-            {completedLessons.length} lições completas
-          </Text>
-        </View>
-
+        <AccountCard
+          title="Minha Conta"
+          name={nome ?? "Aluno"}
+          email={user?.email}
+          footer={
+            <Text style={{ fontFamily: fonts.regular, fontSize: fontSizes.sm, color: colors.navy800 }}>
+              {completedLessons.length} lições completas
+            </Text>
+          }
+        />
         <View
           style={{
             width: "100%",
@@ -93,7 +91,7 @@ export default function PerfilAluno() {
         <TouchableOpacity
           onPress={handleLogout}
           style={{
-            backgroundColor: colors.error,
+            backgroundColor: colors.brandPink,
             padding: spacing.lg,
             borderRadius: radii.lg,
             width: "100%",
@@ -108,6 +106,10 @@ export default function PerfilAluno() {
     </View>
   );
 }
+
+
+
+
 
 
 

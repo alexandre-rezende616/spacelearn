@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { View, Text, TouchableOpacity, Dimensions, ScrollView } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +17,7 @@ type InfoCard = {
 export default function PainelProfessor() {
   const { user } = useAuth();
   const [nome, setNome] = useState<string | null>(null);
+  const [counts, setCounts] = useState({ classes: 0, missions: 0, medals: 0, students: 0 });
 
   useEffect(() => {
     let mounted = true;
@@ -45,16 +46,48 @@ export default function PainelProfessor() {
     };
   }, [user?.id]);
 
-  const cards: InfoCard[] = useMemo(
-    () => [
-      { key: "turmas", title: "Turmas ativas", value: 3, icon: "people", tint: colors.brandCyan },
-      { key: "missoes", title: "Missões em andamento", value: 12, icon: "flag", tint: colors.brandPink },
-      { key: "medalhas", title: "Medalhas atribuídas", value: 27, icon: "ribbon", tint: colors.navy800 },
-      { key: "alunos", title: "Total de alunos", value: 86, icon: "rocket", tint: colors.navy900 },
-    ],
-    [],
-  );
-
+  const cards: InfoCard[] = useMemo(() => [
+      { key: 'turmas', title: 'Turmas ativas', value: counts.classes, icon: 'people', tint: colors.brandCyan },
+      { key: 'missoes', title: 'Missões publicadas', value: counts.missions, icon: 'flag', tint: colors.brandPink },
+      { key: 'medalhas', title: 'Conquistas (concluídas)', value: counts.medals, icon: 'ribbon', tint: colors.navy800 },
+      { key: 'alunos', title: 'Total de alunos', value: counts.students, icon: 'rocket', tint: colors.navy900 },
+    ], [counts]);
+  useEffect(() => {
+    if (!user?.id) return;
+    async function fetchCounts() {
+      try {
+        const c1 = await supabase.from('classes').select('id', { count: 'exact', head: true }).eq('teacher_id', user.id);
+        const classesCount = c1.count ?? 0;
+        const { data: cls } = await supabase.from('classes').select('id').eq('teacher_id', user.id);
+        const classIds = (cls ?? []).map((r: any) => r.id);
+        let studentsCount = 0;
+        if (classIds.length) {
+          const { data: enr } = await supabase.from('enrollments').select('student_id').in('class_id', classIds);
+          const uniq = new Set((enr ?? []).map((e: any) => e.student_id));
+          studentsCount = uniq.size;
+        }
+        const c2 = await supabase.from('missions').select('id', { count: 'exact', head: true }).eq('created_by', user.id).eq('status', 'published');
+        const missionsCount = c2.count ?? 0;
+        let medalsCount = 0;
+        const { data: mids } = await supabase.from('missions').select('id').eq('created_by', user.id);
+        const missionIds = (mids ?? []).map((m: any) => m.id);
+        if (missionIds.length) {
+          const { data: prog } = await supabase.from('progress').select('id,completed').in('mission_id', missionIds).eq('completed', true);
+          medalsCount = (prog ?? []).length;
+        }
+        setCounts({ classes: classesCount, missions: missionsCount, medals: medalsCount, students: studentsCount });
+      } catch {}
+    }
+    fetchCounts();
+    const ch = supabase
+      .channel(`prof-dashboard-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'classes', filter: `teacher_id=eq.${user.id}` }, fetchCounts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollments' }, fetchCounts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'missions', filter: `created_by=eq.${user.id}` }, fetchCounts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'progress' }, fetchCounts)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id]);
   const width = Dimensions.get("window").width;
   const isSmall = width < 360;
   const cardWidth = isSmall ? "100%" : "48%";
@@ -64,7 +97,7 @@ export default function PainelProfessor() {
       contentContainerStyle={{ padding: spacing.lg }}
       style={{ flex: 1, backgroundColor: colors.bgLight }}
     >
-      {/* Cabeçalho */}
+      {/* CabeÃ§alho */}
       <View style={{ marginBottom: spacing.lg }}>
         <Text style={{ fontFamily: "Inter-Bold", fontSize: 24, color: colors.navy800 }}>
           {`Bem-vindo, Prof. ${nome ?? "..."}!`}
@@ -96,7 +129,7 @@ export default function PainelProfessor() {
               ...shadows.soft,
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.sm }}>
+            <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: spacing.sm }}>
               <View
                 style={{
                   width: 36,
@@ -111,8 +144,8 @@ export default function PainelProfessor() {
                 <Ionicons name={c.icon} color={colors.white} size={20} />
               </View>
               <Text
-                numberOfLines={2}
-                style={{ fontFamily: "Inter-Bold", color: colors.navy800, flexShrink: 1 }}
+                
+                style={{ fontFamily: "Inter-Bold", color: colors.navy800, flex: 1, flexWrap: "wrap", minWidth: 0 }}
               >
                 {c.title}
               </Text>
@@ -122,15 +155,15 @@ export default function PainelProfessor() {
         ))}
       </View>
 
-      {/* Ações rápidas */}
+      {/* AÃ§Ãµes rÃ¡pidas */}
       <View style={{ marginBottom: spacing.md }}>
         <Text style={{ fontFamily: "Inter-Bold", fontSize: 18, color: colors.navy800, marginBottom: spacing.md }}>
-          Ações rápidas
+          AÃ§Ãµes rÃ¡pidas
         </Text>
 
         <View style={{ gap: spacing.md }}>
           <TouchableOpacity
-            onPress={() => console.log("Criar missão")}
+            onPress={() => (require("expo-router").useRouter().push("/(professor)/missoes"))}
             style={{
               backgroundColor: colors.brandCyan,
               paddingVertical: spacing.lg,
@@ -138,11 +171,11 @@ export default function PainelProfessor() {
               alignItems: "center",
             }}
           >
-            <Text style={{ color: colors.white, fontFamily: "Inter-Bold", fontSize: 16 }}>Criar missão</Text>
+            <Text style={{ color: colors.white, fontFamily: "Inter-Bold", fontSize: 16 }}>Criar missÃ£o</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => console.log("Ver turmas")}
+            onPress={() => (require("expo-router").useRouter().push("/(professor)/turmas"))}
             style={{
               backgroundColor: colors.white,
               paddingVertical: spacing.lg,
@@ -171,3 +204,9 @@ export default function PainelProfessor() {
     </ScrollView>
   );
 }
+
+
+
+
+
+
