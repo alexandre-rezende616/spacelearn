@@ -45,7 +45,7 @@ export default function PerfilAluno() {
 
   async function handleLogout() {
     await signOut();
-    // Usar caminho absoluto evita problemas de resoluÃ§Ã£o relativa
+    // Usar caminho absoluto evita problemas de resolução relativa
     router.replace("/auth/login");
   }
 

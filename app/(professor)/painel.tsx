@@ -97,7 +97,7 @@ export default function PainelProfessor() {
       contentContainerStyle={{ padding: spacing.lg }}
       style={{ flex: 1, backgroundColor: colors.bgLight }}
     >
-      {/* CabeÃ§alho */}
+      {/* Cabeçalho */}
       <View style={{ marginBottom: spacing.lg }}>
         <Text style={{ fontFamily: "Inter-Bold", fontSize: 24, color: colors.navy800 }}>
           {`Bem-vindo, Prof. ${nome ?? "..."}!`}
@@ -155,10 +155,10 @@ export default function PainelProfessor() {
         ))}
       </View>
 
-      {/* AÃ§Ãµes rÃ¡pidas */}
+      {/* Ações rápidas */}
       <View style={{ marginBottom: spacing.md }}>
         <Text style={{ fontFamily: "Inter-Bold", fontSize: 18, color: colors.navy800, marginBottom: spacing.md }}>
-          AÃ§Ãµes rÃ¡pidas
+          Ações rápidas
         </Text>
 
         <View style={{ gap: spacing.md }}>
@@ -171,7 +171,7 @@ export default function PainelProfessor() {
               alignItems: "center",
             }}
           >
-            <Text style={{ color: colors.white, fontFamily: "Inter-Bold", fontSize: 16 }}>Criar missÃ£o</Text>
+            <Text style={{ color: colors.white, fontFamily: "Inter-Bold", fontSize: 16 }}>Criar missão</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

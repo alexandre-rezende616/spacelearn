@@ -40,7 +40,7 @@ export default function ProfessorTabs() {
       <Tabs.Screen
         name="missoes"
         options={{
-          title: "MissÃµes",
+          title: "Missões",
           tabBarIcon: ({ color, size }) => <Ionicons name="flag" color={color} size={size} />,
         }}
       />
@@ -54,7 +54,7 @@ export default function ProfessorTabs() {
       <Tabs.Screen
         name="diario"
         options={{
-          title: "DiÃ¡rio",
+          title: "Diário",
           tabBarIcon: ({ color, size }) => <Ionicons name="book" color={color} size={size} />,
         }}
       />

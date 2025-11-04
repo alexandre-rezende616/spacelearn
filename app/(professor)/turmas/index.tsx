@@ -51,7 +51,7 @@ export default function TurmasScreen() {
       if (error) throw error;
       setItems((data as ClassRow[]) ?? []);
     } catch (e: any) {
-      Alert.alert('Erro', e.message ?? 'NÃ£o foi possÃ­vel carregar turmas');
+      Alert.alert('Erro', e.message ?? 'Não foi possível carregar turmas');
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ export default function TurmasScreen() {
     try {
       if (!user?.id) return;
       if (!newName.trim()) {
-        Alert.alert('Nome obrigatÃ³rio', 'Informe o nome da turma.');
+        Alert.alert('Nome obrigatório', 'Informe o nome da turma.');
         return;
       }
       const code = generateCode(7);
@@ -79,7 +79,7 @@ export default function TurmasScreen() {
       setNewName('');
       setModalVisible(false);
     } catch (e: any) {
-      Alert.alert('Erro', e.message ?? 'NÃ£o foi possÃ­vel criar a turma');
+      Alert.alert('Erro', e.message ?? 'Não foi possível criar a turma');
     }
   }
 
@@ -101,7 +101,7 @@ export default function TurmasScreen() {
 
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: spacing.sm }}>
-            <Text style={{ fontFamily: 'Inter-Regular', color: colors.navy800 }}>CÃ³digo:</Text>
+            <Text style={{ fontFamily: 'Inter-Regular', color: colors.navy800 }}>Código:</Text>
             <Text style={{ fontFamily: 'Inter-Bold', color: colors.navy900, letterSpacing: 1 }}>
               {item.code}
             </Text>
@@ -109,7 +109,7 @@ export default function TurmasScreen() {
           <TouchableOpacity
             onPress={async () => {
               await copyToClipboard(item.code);
-              Alert.alert('CÃ³digo copiado', item.code);
+              Alert.alert('Código copiado', item.code);
             }}
             style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }}
           >
@@ -118,7 +118,7 @@ export default function TurmasScreen() {
         </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.md }}>
-          <Text style={{ color: colors.navy800 }}>Alunos: â€”</Text>
+          <Text style={{ color: colors.navy800 }}>Alunos: —</Text>
           <TouchableOpacity onPress={() => router.push(`/(professor)/turmas/${item.id}`)}>
             <Text style={{ color: colors.brandCyan, fontFamily: 'Inter-Bold' }}>Ver alunos</Text>
           </TouchableOpacity>
@@ -163,7 +163,7 @@ export default function TurmasScreen() {
         renderItem={renderItem}
       />
 
-      {/* Modal de criaÃ§Ã£o */}
+      {/* Modal de criação */}
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.25)' }} onPress={() => setModalVisible(false)}>
           <View />

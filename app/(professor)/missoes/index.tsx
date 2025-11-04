@@ -33,7 +33,7 @@ export default function MissoesProfessor() {
       if (error) throw error;
       setItems((data as Mission[]) ?? []);
     } catch (e: any) {
-      Alert.alert('Erro', e?.message ?? 'NÃ£o foi possÃ­vel carregar missÃµes');
+      Alert.alert('Erro', e?.message ?? 'Não foi possível carregar missões');
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,7 @@ export default function MissoesProfessor() {
 
   useEffect(() => { fetchMissions(); }, [user?.id, statusFilter]);
 
-  // Realtime: atualiza lista quando missÃµes do autor mudarem
+  // Realtime: atualiza lista quando missões do autor mudarem
   useEffect(() => {
     if (!user?.id) return;
     const channel = supabase
@@ -63,7 +63,7 @@ export default function MissoesProfessor() {
 
   async function handleCreate() {
     if (!user?.id) return;
-    if (!title.trim()) { Alert.alert('TÃ­tulo obrigatÃ³rio', 'Informe o tÃ­tulo da missÃ£o.'); return; }
+    if (!title.trim()) { Alert.alert('Título obrigatório', 'Informe o título da missão.'); return; }
     try {
       const { data, error } = await supabase
         .from('missions')
@@ -76,7 +76,7 @@ export default function MissoesProfessor() {
       setDescription('');
       setModalVisible(false);
     } catch (e: any) {
-      Alert.alert('Erro', e?.message ?? 'NÃ£o foi possÃ­vel criar a missÃ£o');
+      Alert.alert('Erro', e?.message ?? 'Não foi possível criar a missão');
     }
   }
 
@@ -84,7 +84,7 @@ export default function MissoesProfessor() {
     <View style={{ flex: 1, backgroundColor: colors.bgLight }}>
       {/* Header */}
       <View style={{ padding: spacing.lg, gap: spacing.sm }}>
-        <Text style={{ fontFamily: 'Inter-Bold', fontSize: 22, color: colors.navy900 }}>Minhas MissÃµes</Text>
+        <Text style={{ fontFamily: 'Inter-Bold', fontSize: 22, color: colors.navy900 }}>Minhas Missões</Text>
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
           {(['all','draft','published'] as const).map((s) => (
             <TouchableOpacity
@@ -107,10 +107,10 @@ export default function MissoesProfessor() {
         </View>
       </View>
 
-      {/* AÃ§Ãµes */}
+      {/* Ações */}
       <View style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.md }}>
         <TouchableOpacity onPress={() => setModalVisible(true)} style={{ backgroundColor: colors.brandCyan, padding: spacing.lg, borderRadius: radii.lg, alignItems: 'center' }}>
-          <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>Nova missÃ£o</Text>
+          <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>Nova missão</Text>
         </TouchableOpacity>
       </View>
 
@@ -122,7 +122,7 @@ export default function MissoesProfessor() {
         refreshing={refreshing}
         onRefresh={async () => { setRefreshing(true); await fetchMissions(); setRefreshing(false); }}
         ListEmptyComponent={!loading ? (
-          <Text style={{ textAlign: 'center', color: colors.navy800, marginTop: spacing.xl }}>Nenhuma missÃ£o.</Text>
+          <Text style={{ textAlign: 'center', color: colors.navy800, marginTop: spacing.xl }}>Nenhuma missão.</Text>
         ) : null}
         renderItem={({ item, index }) => (
           <Animated.View entering={FadeInUp.duration(450).delay(index * 80)} style={{ backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, marginBottom: spacing.md, ...shadows.soft }}>
@@ -134,27 +134,27 @@ export default function MissoesProfessor() {
               Status: {item.status === 'published' ? 'Publicada' : 'Rascunho'}
             </Text>
             <TouchableOpacity onPress={() => router.push(`/(professor)/missoes/${item.id}`)} style={{ marginTop: spacing.md, alignSelf: 'flex-start' }}>
-              <Text style={{ color: colors.brandCyan, fontFamily: 'Inter-Bold' }}>Editar missÃ£o</Text>
+              <Text style={{ color: colors.brandCyan, fontFamily: 'Inter-Bold' }}>Editar missão</Text>
             </TouchableOpacity>
           </Animated.View>
         )}
       />
 
-      {/* Modal Nova MissÃ£o */}
+      {/* Modal Nova Missão */}
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.25)' }} onPress={() => setModalVisible(false)}>
           <View />
         </Pressable>
         <View style={{ backgroundColor: colors.white, padding: spacing.lg }}>
-          <Text style={{ fontFamily: 'Inter-Bold', fontSize: 18, color: colors.navy900, marginBottom: spacing.md }}>Nova missÃ£o</Text>
+          <Text style={{ fontFamily: 'Inter-Bold', fontSize: 18, color: colors.navy900, marginBottom: spacing.md }}>Nova missão</Text>
           <TextInput
-            placeholder="TÃ­tulo"
+            placeholder="Título"
             value={title}
             onChangeText={setTitle}
             style={{ borderWidth: 1, borderColor: colors.navy800, borderRadius: radii.md, backgroundColor: colors.white, padding: spacing.md, marginBottom: spacing.md }}
           />
           <TextInput
-            placeholder="DescriÃ§Ã£o (opcional)"
+            placeholder="Descrição (opcional)"
             value={description}
             onChangeText={setDescription}
             multiline
