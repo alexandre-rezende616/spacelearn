@@ -29,18 +29,20 @@ export default function RootLayout() {
         .eq("id", userId)
         .maybeSingle();
 
-      let role = (data?.role as "aluno" | "professor" | undefined);
+      let role = (data?.role as "aluno" | "professor" | "coordenador" | undefined);
 
       if (error || !role) role = "aluno"; // fallback
 
       if (role === "professor") {
-        safeReplace("/(professor)");
+        safeReplace({ pathname: "/(professor)" } as any);
+      } else if (role === "coordenador") {
+        safeReplace({ pathname: "/(coordenador)" } as any);
       } else {
-        safeReplace("/(aluno)");
+        safeReplace({ pathname: "/(aluno)" } as any);
       }
     } catch (err) {
       console.log("Erro ao verificar role:", err);
-      safeReplace("/auth/login");
+      safeReplace({ pathname: "/auth/login" } as any);
     }
   }
 
@@ -63,11 +65,11 @@ export default function RootLayout() {
         if (user?.id) {
           await routeByRole(user.id);
         } else {
-          safeReplace("/auth/login");
+          safeReplace({ pathname: "/auth/login" } as any);
         }
       } catch (err) {
         console.log("Erro na verificação de sessão:", err);
-        safeReplace("/auth/login");
+        safeReplace({ pathname: "/auth/login" } as any);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -84,7 +86,7 @@ export default function RootLayout() {
       setUser(user);
 
       if (user?.id) routeByRole(user.id);
-      else safeReplace("/auth/login");
+      else safeReplace({ pathname: "/auth/login" } as any);
     });
 
     return () => {

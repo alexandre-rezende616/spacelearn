@@ -10,17 +10,17 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function getUserRole(userId: string): Promise<"aluno" | "professor"> {
+  async function getUserRole(userId: string): Promise<"aluno" | "professor" | "coordenador"> {
     try {
       const { data, error } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", userId)
         .maybeSingle();
-      if (data?.role) return data.role as "aluno" | "professor";
+      if (data?.role) return data.role as "aluno" | "professor" | "coordenador";
       if (error) console.log("Erro ao buscar role (profiles):", error.message);
       const { data: userData } = await supabase.auth.getUser();
-      const metaRole = (userData.user?.user_metadata?.role as "aluno" | "professor" | undefined) ?? "aluno";
+      const metaRole = (userData.user?.user_metadata?.role as "aluno" | "professor" | "coordenador" | undefined) ?? "aluno";
       return metaRole;
     } catch (e: any) {
       console.log("Exceção ao buscar role:", e?.message);
@@ -28,7 +28,7 @@ export default function LoginScreen() {
     }
   }
 
-  async function ensureProfile(userId: string, role: "aluno" | "professor", nomeFromMeta?: string | null) {
+  async function ensureProfile(userId: string, role: "aluno" | "professor" | "coordenador", nomeFromMeta?: string | null) {
     try {
       const payload: any = { id: userId, role };
       if (nomeFromMeta && String(nomeFromMeta).trim().length > 0) payload.nome = String(nomeFromMeta).trim();

@@ -31,6 +31,10 @@ export default function AlunoTabs() {
         options={{ title: "Turmas", tabBarIcon: ({ color, size }) => <Ionicons name="people" color={color} size={size} /> }}
       />
       <Tabs.Screen
+        name="loja"
+        options={{ title: "Loja", tabBarIcon: ({ color, size }) => <Ionicons name="cart" color={color} size={size} /> }}
+      />
+      <Tabs.Screen
         name="badges"
         options={{ title: "Medalhas", tabBarIcon: ({ color, size }) => <Ionicons name="trophy" color={color} size={size} /> }}
       />

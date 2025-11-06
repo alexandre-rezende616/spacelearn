@@ -19,7 +19,6 @@ export default function ProfessorTabs() {
         tabBarInactiveTintColor: colors.navy800, // #1D1856
         tabBarStyle: { backgroundColor: colors.white },
         tabBarLabelStyle: { fontFamily: "Inter-Medium" },
-        sceneContainerStyle: { backgroundColor: colors.bgLight }, // #F2F2F7
       }}
     >
       <Tabs.Screen name="index" options={{ href: null }} />
@@ -49,13 +48,6 @@ export default function ProfessorTabs() {
         options={{
           title: "Medalhas",
           tabBarIcon: ({ color, size }) => <Ionicons name="ribbon" color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="diario"
-        options={{
-          title: "Diário",
-          tabBarIcon: ({ color, size }) => <Ionicons name="book" color={color} size={size} />,
         }}
       />
       <Tabs.Screen

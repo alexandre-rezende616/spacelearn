@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -8,6 +8,7 @@ import { useAuth } from '../../../src/store/useAuth';
 
 type Question = { id: string; prompt: string; order_index: number };
 type Option = { id: string; question_id: string; text: string; is_correct: boolean };
+type Medal = { id: string; title: string; description: string | null; required_correct: number };
 
 export default function PlayMission() {
   const router = useRouter();
@@ -18,6 +19,9 @@ export default function PlayMission() {
   const [optionsByQ, setOptionsByQ] = useState<Record<string, Option[]>>({});
   const [idx, setIdx] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+  const [totalCorrectLoaded, setTotalCorrectLoaded] = useState(false);
+  const [medals, setMedals] = useState<Medal[]>([]);
   const total = questions.length;
 
   useEffect(() => {
@@ -25,6 +29,9 @@ export default function PlayMission() {
       if (!missionId || !user?.id) return;
       try {
         setLoading(true);
+        setIdx(0);
+        setCorrectCount(0);
+        setOptionsByQ({});
         // Carrega perguntas
         const { data: qs, error: qErr } = await supabase
           .from('mission_questions')
@@ -55,6 +62,54 @@ export default function PlayMission() {
       }
     })();
   }, [missionId, user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setTotalCorrectLoaded(false);
+    let active = true;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('progress')
+          .select('mission_id,correct_count')
+          .eq('student_id', user.id);
+        if (error) throw error;
+        if (!active) return;
+        const rows = data ?? [];
+        const totalSum = rows.reduce(
+          (sum, row: any) => sum + ((row.correct_count as number | null) ?? 0),
+          0,
+        );
+        setTotalCorrect(totalSum);
+      } catch {
+        // silencioso
+      } finally {
+        if (active) setTotalCorrectLoaded(true);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('medals')
+          .select('id,title,description,required_correct');
+        if (error) throw error;
+        if (!active) return;
+        setMedals((data as Medal[]) ?? []);
+      } catch {
+        // silencioso
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function playSound(correct: boolean) {
     try {
@@ -91,28 +146,95 @@ export default function PlayMission() {
       const nextCorrect = is_correct ? correctCount + 1 : correctCount;
       const nextTotal = total;
       const completed = idx + 1 >= total;
+      const { data: existingProgress, error: existingErr } = await supabase
+        .from('progress')
+        .select('xp_awarded,coins_awarded,correct_count')
+        .eq('mission_id', missionId)
+        .eq('student_id', user.id)
+        .maybeSingle();
+      if (existingErr) throw existingErr;
+      const prevMissionCorrect = (existingProgress?.correct_count as number | null) ?? 0;
+
       const xp = completed ? nextCorrect * 10 : 0;
       const coins = completed ? nextCorrect * 5 : 0;
+
       const { error: pErr } = await supabase
         .from('progress')
-        .upsert({
-          mission_id: missionId,
-          student_id: user.id,
-          correct_count: nextCorrect,
-          total_count: nextTotal,
-          completed,
-          xp_awarded: xp,
-          coins_awarded: coins,
-        }, { onConflict: 'mission_id,student_id' });
+        .upsert(
+          {
+            mission_id: missionId,
+            student_id: user.id,
+            correct_count: nextCorrect,
+            total_count: nextTotal,
+            completed,
+            xp_awarded: xp,
+            coins_awarded: coins,
+          },
+          { onConflict: 'mission_id,student_id' },
+        );
       if (pErr) throw pErr;
+
+      const prevXp = existingProgress?.xp_awarded ?? 0;
+      const prevCoins = existingProgress?.coins_awarded ?? 0;
+      const deltaXp = xp - prevXp;
+      const deltaCoins = coins - prevCoins;
+
+      if (deltaXp !== 0 || deltaCoins !== 0) {
+        const { data: profileRow, error: profileErr } = await supabase
+          .from('profiles')
+          .select('xp_total,coins_balance')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (profileErr) throw profileErr;
+        const currentXp = (profileRow?.xp_total as number | null) ?? 0;
+        const currentCoins = (profileRow?.coins_balance as number | null) ?? 0;
+        const nextXp = Math.max(0, currentXp + deltaXp);
+        const nextCoins = Math.max(0, currentCoins + deltaCoins);
+        const { error: updateErr } = await supabase
+          .from('profiles')
+          .update({ xp_total: nextXp, coins_balance: nextCoins })
+          .eq('id', user.id);
+        if (updateErr) throw updateErr;
+      }
+
+      const baseTotal = totalCorrectLoaded ? totalCorrect : prevMissionCorrect;
+      const updatedTotalCorrect = baseTotal - prevMissionCorrect + nextCorrect;
+      setTotalCorrect(updatedTotalCorrect);
+      const newlyUnlocked = totalCorrectLoaded
+        ? medals.filter(
+            (medal) =>
+              totalCorrect < medal.required_correct && updatedTotalCorrect >= medal.required_correct,
+          )
+        : [];
 
       setCorrectCount(nextCorrect);
       await playSound(is_correct);
 
       if (completed) {
-        Alert.alert('Missão concluída', `Acertos: ${nextCorrect}/${nextTotal}`);
+        const rewardSummary =
+          deltaXp > 0 || deltaCoins > 0
+            ? `Recompensas: ${deltaXp > 0 ? `${deltaXp} XP` : ''}${deltaXp > 0 && deltaCoins > 0 ? ' • ' : ''}${deltaCoins > 0 ? `${deltaCoins} moedas` : ''}`
+            : undefined;
+        const medalMessage = newlyUnlocked.length
+          ? `Medalha${newlyUnlocked.length > 1 ? 's' : ''} desbloqueada${newlyUnlocked.length > 1 ? 's' : ''}: ${newlyUnlocked
+              .map((medal) => medal.title)
+              .join(', ')}`
+          : null;
+        const finalMessage = [rewardSummary ?? `Acertos: ${nextCorrect}/${nextTotal}`, medalMessage]
+          .filter(Boolean)
+          .join('\n\n');
+        Alert.alert('Missão concluída', finalMessage);
         router.back();
       } else {
+        if (newlyUnlocked.length) {
+          const medalMessage =
+            newlyUnlocked.length === 1
+              ? `Você desbloqueou a medalha ${newlyUnlocked[0].title}!`
+              : `Você desbloqueou as medalhas ${newlyUnlocked
+                  .map((medal) => medal.title)
+                  .join(', ')}!`;
+          Alert.alert('Medalhas', medalMessage);
+        }
         setIdx((v) => v + 1);
       }
     } catch (e: any) {
@@ -123,7 +245,7 @@ export default function PlayMission() {
   const current = questions[idx];
   const options = useMemo(() => (current ? (optionsByQ[current.id] ?? []) : []), [current, optionsByQ]);
 
-  if (!current) {
+  if (!totalCorrectLoaded || !current) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bgLight }}>
         <Text style={{ color: colors.navy800 }}>Carregando missão...</Text>

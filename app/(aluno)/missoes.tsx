@@ -37,7 +37,8 @@ export default function MissoesAluno() {
         .select('mission_id, class_id, classes(id,name)')
         .in('class_id', cIds);
       if (e2) throw e2;
-      const missionIds = Array.from(new Set((mcs ?? []).map((mc: MCRow) => mc.mission_id)));
+      const missionClassRows: MCRow[] = ((mcs ?? []) as unknown) as MCRow[];
+      const missionIds = Array.from(new Set(missionClassRows.map((mc) => mc.mission_id)));
 
       // 3) missões publicadas
       const { data: miss, error: e3 } = await supabase
@@ -51,7 +52,7 @@ export default function MissoesAluno() {
 
       // map missões -> classes
       const map: Record<string, {id:string;name:string}[]> = {};
-      (mcs ?? []).forEach((mc: MCRow) => {
+      missionClassRows.forEach((mc) => {
         if (!map[mc.mission_id]) map[mc.mission_id] = [];
         if (mc.classes) map[mc.mission_id].push({ id: mc.classes.id, name: mc.classes.name });
       });
@@ -119,7 +120,7 @@ export default function MissoesAluno() {
                   Turmas: {classes.map((c) => c.name).join(', ')}
                 </Text>
               )}
-              <TouchableOpacity onPress={() => router.push(`/(aluno)/play/${item.id}`)} style={{ marginTop: spacing.md, alignSelf: 'flex-start' }}>
+              <TouchableOpacity onPress={() => router.push({ pathname: "/(aluno)/play/[missionId]", params: { missionId: item.id } } as any)} style={{ marginTop: spacing.md, alignSelf: 'flex-start' }}>
                 <Text style={{ color: colors.brandCyan, fontFamily: 'Inter-Bold' }}>Jogar</Text>
               </TouchableOpacity>
             </Animated.View>
