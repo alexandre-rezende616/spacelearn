@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors, radii, shadows, spacing } from '../../../src/theme/tokens';
 import { supabase } from '../../../src/lib/supabaseClient';
 import { useAuth } from '../../../src/store/useAuth';
+import { goBackOrReplace } from '../../../src/utils/navigation';
 
 type Mission = { id: string; title: string; description: string | null; status: 'draft' | 'published'; created_by?: string };
 type Question = { id: string; prompt: string; order_index: number };
@@ -47,7 +48,7 @@ export default function CoordenadorEditMission() {
       if (mErr) throw mErr;
       if (!mData || mData.created_by !== user.id) {
         Alert.alert('Missão não encontrada', 'Verifique se a missão pertence ao seu usuário.');
-        router.back();
+        goBackOrReplace(router, { pathname: "/(coordenador)/missoes" } as any);
         return;
       }
       setMission(mData as Mission);

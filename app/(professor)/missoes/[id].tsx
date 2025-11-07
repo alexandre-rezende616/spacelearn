@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, shadows, spacing } from '../../../src/theme/tokens';
 import { supabase } from '../../../src/lib/supabaseClient';
 import { useAuth } from '../../../src/store/useAuth';
+import { goBackOrReplace } from '../../../src/utils/navigation';
 
 type MissionRow = { id: string; title: string; description: string | null; status: 'draft' | 'published'; created_by: string | null };
 type QuestionRow = { id: string; prompt: string; order_index: number };
@@ -40,7 +41,7 @@ export default function ProfessorMissionDetail() {
       if (error) throw error;
       if (!data) {
         Alert.alert('Missão não encontrada', 'Esta missão pode ter sido removida pelo coordenador.');
-        router.back();
+        goBackOrReplace(router, { pathname: "/(professor)/missoes" } as any);
         return;
       }
       setMission(data as MissionRow);
@@ -57,7 +58,7 @@ export default function ProfessorMissionDetail() {
       }
     } catch (err: any) {
       Alert.alert('Erro', err?.message ?? 'Não foi possível carregar a missão.');
-      router.back();
+        goBackOrReplace(router, { pathname: "/(professor)/missoes" } as any);
     }
   }
 

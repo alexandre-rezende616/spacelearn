@@ -41,7 +41,7 @@ App em React Native com Expo Router e Supabase, focado em conteudos de espaco/ci
   - Auth: `app/auth`
 
 - Root layout: `app/_layout.tsx`
-  - Detecta sessao e direciona por `role` (aluno/professor/coordenador) no load inicial e quando a sess�o mudar.
+  - Detecta sessao e direciona por `role` (aluno/professor/coordenador) no load inicial e quando a sessao mudar.
   - Sem sessao: vai para `/auth/login`.
 
 ## audio (sem expo-av)

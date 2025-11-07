@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, shadows, spacing } from '../../../src/theme/tokens';
 import { supabase } from '../../../src/lib/supabaseClient';
 import { useAuth } from '../../../src/store/useAuth';
+import { goBackOrReplace } from '../../../src/utils/navigation';
 
 type ClassRow = { id: string; name: string; code: string; created_at: string };
 type StudentRow = { id: string; nome: string | null };
@@ -33,6 +34,7 @@ export default function TurmaDetalhesProfessor() {
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [postingMessage, setPostingMessage] = useState(false);
+  const [deletingClass, setDeletingClass] = useState(false);
 
   const [missionModalOpen, setMissionModalOpen] = useState(false);
   const [availableMissions, setAvailableMissions] = useState<MissionInfo[]>([]);
@@ -49,12 +51,12 @@ export default function TurmaDetalhesProfessor() {
       .maybeSingle();
     if (error || !data) {
       Alert.alert('Turma não encontrada', 'Verifique se você tem acesso a esta turma.');
-      router.back();
+      goBackOrReplace(router, { pathname: "/(professor)/turmas" } as any);
       return;
     }
     if (data.teacher_id !== user?.id) {
       Alert.alert('Sem acesso', 'Esta turma pertence a outro professor.');
-      router.back();
+      goBackOrReplace(router, { pathname: "/(professor)/turmas" } as any);
       return;
     }
     setClassInfo({
@@ -314,6 +316,36 @@ export default function TurmaDetalhesProfessor() {
     }
   }
 
+  function confirmDeleteClass() {
+    Alert.alert(
+      'Excluir turma',
+      'Tem certeza de que deseja excluir esta turma? Esta ação remove as missões atribuídas e as matrículas dos alunos.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: deleteClass,
+        },
+      ],
+    );
+  }
+
+  async function deleteClass() {
+    if (!classId) return;
+    try {
+      setDeletingClass(true);
+      const { error } = await supabase.from('classes').delete().eq('id', classId);
+      if (error) throw error;
+      Alert.alert('Turma removida', 'A turma foi excluída com sucesso.');
+      router.replace('/(professor)/turmas');
+    } catch (err: any) {
+      Alert.alert('Erro', err?.message ?? 'Não foi possível excluir a turma.');
+    } finally {
+      setDeletingClass(false);
+    }
+  }
+
   if (!classInfo) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bgLight, alignItems: 'center', justifyContent: 'center' }}>
@@ -325,7 +357,24 @@ export default function TurmaDetalhesProfessor() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bgLight }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.xl }}>
       <View style={{ backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.md, ...shadows.soft }}>
-        <Text style={{ fontFamily: 'Inter-Bold', fontSize: 22, color: colors.navy900 }}>{classInfo.name}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md }}>
+          <Text style={{ fontFamily: 'Inter-Bold', fontSize: 22, color: colors.navy900, flex: 1 }}>{classInfo.name}</Text>
+          <TouchableOpacity
+            onPress={confirmDeleteClass}
+            disabled={deletingClass}
+            style={{
+              paddingHorizontal: spacing.md,
+              paddingVertical: spacing.sm,
+              borderRadius: radii.md,
+              backgroundColor: colors.brandPink,
+              opacity: deletingClass ? 0.6 : 1,
+            }}
+          >
+            <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>
+              {deletingClass ? 'Excluindo...' : 'Excluir turma'}
+            </Text>
+          </TouchableOpacity>
+        </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
           <Text style={{ color: colors.navy800 }}>Código:</Text>
           <Text style={{ fontFamily: 'Inter-Bold', color: colors.navy900, letterSpacing: 1 }}>{classInfo.code}</Text>

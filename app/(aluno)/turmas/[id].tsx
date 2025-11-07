@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, shadows, spacing } from '../../../src/theme/tokens';
 import { supabase } from '../../../src/lib/supabaseClient';
 import { useAuth } from '../../../src/store/useAuth';
+import { goBackOrReplace } from '../../../src/utils/navigation';
 
 type ClassRow = { id: string; name: string; code: string; created_at: string };
 type MissionInfo = { id: string; title: string; description: string | null; status: 'draft' | 'published'; orderIndex: number };
@@ -35,7 +36,7 @@ export default function TurmaDetalheAluno() {
       .maybeSingle();
     if (error || !data) {
       Alert.alert('Turma não encontrada', 'Este código pode estar incorreto ou a turma foi removida.');
-      router.back();
+      goBackOrReplace(router, { pathname: "/(aluno)/turmas" } as any);
       return;
     }
     setClassInfo(data as ClassRow);

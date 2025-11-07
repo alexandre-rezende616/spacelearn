@@ -18,6 +18,7 @@ export default function TurmasAlunoIndex() {
   const [refreshing, setRefreshing] = useState(false);
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [messages, setMessages] = useState<Record<string, MessagePreview>>({});
+  const [leavingClassId, setLeavingClassId] = useState<string | null>(null);
 
   async function loadMyClasses() {
     if (!user?.id) return;
@@ -114,6 +115,40 @@ export default function TurmasAlunoIndex() {
     }
   }
 
+  function confirmLeave(classInfo: ClassInfo) {
+    Alert.alert(
+      'Sair da turma',
+      `Deseja sair da turma ${classInfo.name}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: () => leaveClass(classInfo),
+        },
+      ],
+    );
+  }
+
+  async function leaveClass(classInfo: ClassInfo) {
+    if (!user?.id) return;
+    try {
+      setLeavingClassId(classInfo.id);
+      const { error } = await supabase
+        .from('enrollments')
+        .delete()
+        .eq('class_id', classInfo.id)
+        .eq('student_id', user.id);
+      if (error) throw error;
+      await loadMyClasses();
+      Alert.alert('Tudo certo', `Você saiu da turma ${classInfo.name}.`);
+    } catch (err: any) {
+      Alert.alert('Erro', err?.message ?? 'Não foi possível sair da turma.');
+    } finally {
+      setLeavingClassId(null);
+    }
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.bgLight }}>
       <View style={{ padding: spacing.lg, gap: spacing.sm }}>
@@ -166,6 +201,7 @@ export default function TurmasAlunoIndex() {
         }
         renderItem={({ item, index }) => {
           const preview = messages[item.id];
+          const leaving = leavingClassId === item.id;
           return (
             <Animated.View
               entering={FadeInUp.duration(450).delay(index * 70)}
@@ -188,6 +224,22 @@ export default function TurmasAlunoIndex() {
                 style={{ alignSelf: 'flex-start', paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.brandCyan }}
               >
                 <Text style={{ color: colors.brandCyan, fontFamily: 'Inter-Bold' }}>Ver detalhes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => confirmLeave(item)}
+                disabled={leaving || loading}
+                style={{
+                  alignSelf: 'flex-start',
+                  paddingVertical: spacing.sm,
+                  paddingHorizontal: spacing.md,
+                  borderRadius: radii.md,
+                  backgroundColor: colors.brandPink,
+                  opacity: leaving || loading ? 0.6 : 1,
+                }}
+              >
+                <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>
+                  {leaving ? 'Saindo...' : 'Sair da turma'}
+                </Text>
               </TouchableOpacity>
             </Animated.View>
           );

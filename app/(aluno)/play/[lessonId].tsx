@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { colors, spacing } from "../../../src/theme/tokens";
+import { goBackOrReplace } from "../../../src/utils/navigation";
 
 export default function PlayLessonRedirect() {
   const params = useLocalSearchParams<{ lessonId?: string | string[] }>();
@@ -16,7 +17,7 @@ export default function PlayLessonRedirect() {
 
   useEffect(() => {
     if (!missionId) {
-      router.back();
+      goBackOrReplace(router, { pathname: "/(aluno)/missoes" } as any);
       return;
     }
 

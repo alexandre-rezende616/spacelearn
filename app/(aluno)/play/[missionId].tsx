@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors, radii, shadows, spacing } from '../../../src/theme/tokens';
 import { supabase } from '../../../src/lib/supabaseClient';
 import { useAuth } from '../../../src/store/useAuth';
+import { goBackOrReplace } from '../../../src/utils/navigation';
 
 type Question = { id: string; prompt: string; order_index: number };
 type Option = { id: string; question_id: string; text: string; is_correct: boolean };
@@ -39,7 +40,8 @@ export default function PlayMission() {
           .eq('mission_id', missionId)
           .order('order_index', { ascending: true });
         if (qErr) throw qErr;
-        setQuestions((qs as Question[]) ?? []);
+        const questionList = (qs as Question[]) ?? [];
+        setQuestions(questionList);
 
         const qIds = (qs ?? []).map((q: any) => q.id);
         if (qIds.length > 0) {
@@ -54,6 +56,8 @@ export default function PlayMission() {
             map[o.question_id].push(o as Option);
           });
           setOptionsByQ(map);
+        } else {
+          await diagnoseMissionAvailability();
         }
       } catch (e: any) {
         Alert.alert('Erro', e?.message ?? 'Não foi possível carregar a missão');
@@ -62,6 +66,42 @@ export default function PlayMission() {
       }
     })();
   }, [missionId, user?.id]);
+
+  async function diagnoseMissionAvailability() {
+    try {
+      if (!missionId || !user?.id) return;
+      const { data: assignments } = await supabase
+        .from('mission_classes')
+        .select('class_id,classes(name)')
+        .eq('mission_id', missionId);
+      if (!assignments?.length) {
+        Alert.alert(
+          'Missão sem turma',
+          'Esta missão ainda não foi atribuída a nenhuma turma. Peça ao professor para adicioná-la na jornada.',
+        );
+        return;
+      }
+      const classIds = assignments.map((item: any) => item.class_id);
+      const { data: enrollmentRows } = await supabase
+        .from('enrollments')
+        .select('class_id')
+        .in('class_id', classIds)
+        .eq('student_id', user.id);
+      if (!enrollmentRows?.length) {
+        Alert.alert(
+          'Missão indisponível',
+          'Você ainda não faz parte de uma turma que tenha recebido esta missão.',
+        );
+        return;
+      }
+      Alert.alert(
+        'Missão sem perguntas',
+        'O professor ainda não adicionou questões publicadas para esta missão. Tente novamente mais tarde.',
+      );
+    } catch {
+      // silencioso
+    }
+  }
 
   useEffect(() => {
     if (!user?.id) return;
@@ -224,7 +264,7 @@ export default function PlayMission() {
           .filter(Boolean)
           .join('\n\n');
         Alert.alert('Missão concluída', finalMessage);
-        router.back();
+        goBackOrReplace(router, { pathname: "/(aluno)/missoes" } as any);
       } else {
         if (newlyUnlocked.length) {
           const medalMessage =
@@ -245,10 +285,12 @@ export default function PlayMission() {
   const current = questions[idx];
   const options = useMemo(() => (current ? (optionsByQ[current.id] ?? []) : []), [current, optionsByQ]);
 
-  if (!totalCorrectLoaded || !current) {
+  if (!current) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bgLight }}>
-        <Text style={{ color: colors.navy800 }}>Carregando missão...</Text>
+        <Text style={{ color: colors.navy800 }}>
+          {loading ? 'Carregando missão...' : 'Nenhuma pergunta disponível nesta missão.'}
+        </Text>
       </View>
     );
   }
