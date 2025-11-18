@@ -4,6 +4,8 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { colors, radii, shadows, spacing } from "../../../src/theme/tokens";
 import { supabase } from "../../../src/lib/supabaseClient";
 import { useAuth } from "../../../src/store/useAuth";
+import { SpaceBackground } from "../../../src/components/SpaceBackground";
+import { SpaceHUD } from "../../../src/components/SpaceHUD";
 
 type MedalRow = {
   id: string;
@@ -76,19 +78,20 @@ export default function MedalhasAluno() {
   }, [medals, totalCorrect]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bgLight }}>
+    <SpaceBackground>
       <View style={{ padding: spacing.lg, gap: spacing.xs }}>
-        <Text style={{ fontFamily: "Inter-Bold", fontSize: 22, color: colors.navy900 }}>
+        <SpaceHUD />
+        <Text style={{ fontFamily: "Inter-Bold", fontSize: 22, color: colors.white }}>
           Medalhas
         </Text>
-        <Text style={{ color: colors.navy800 }}>
+        <Text style={{ color: colors.white, opacity: 0.8 }}>
           Total de acertos:{" "}
           <Text style={{ fontFamily: "Inter-Bold", color: colors.brandCyan }}>
             {totalCorrect}
           </Text>
         </Text>
-        <Text style={{ color: colors.navy700 }}>
-          Ganhou uma medalha assim que atingir o número de acertos definidos pelo professor.
+        <Text style={{ color: colors.white, opacity: 0.7 }}>
+          Ganhe medalhas assim que atingir as metas definidas pelos professores.
         </Text>
       </View>
 
@@ -189,6 +192,6 @@ export default function MedalhasAluno() {
           )}
         />
       )}
-    </View>
+    </SpaceBackground>
   );
 }

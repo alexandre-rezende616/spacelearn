@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -30,11 +30,15 @@ export default function PlayMission() {
   const [totalCorrect, setTotalCorrect] = useState(0);
   const [totalCorrectLoaded, setTotalCorrectLoaded] = useState(false);
   const [medals, setMedals] = useState<Medal[]>([]);
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [selectedIsCorrect, setSelectedIsCorrect] = useState<boolean | null>(null);
+  const [answering, setAnswering] = useState(false);
+  const [readyForNext, setReadyForNext] = useState(false);
   const total = questions.length;
 
   useEffect(() => {
     if (!missionId) {
-      goBackOrReplace(router, { pathname: "/(aluno)/missoes" } as any);
+      goBackOrReplace(router, { pathname: "/(aluno)/(tabs)/missoes" } as any);
     }
   }, [missionId, router]);
 
@@ -112,6 +116,13 @@ export default function PlayMission() {
     };
   }, []);
 
+  useEffect(() => {
+    setSelectedOptionId(null);
+    setSelectedIsCorrect(null);
+    setAnswering(false);
+    setReadyForNext(false);
+  }, [idx, missionId]);
+
   async function playSound(correct: boolean) {
     try {
       const mod = await import('expo-audio');
@@ -130,7 +141,8 @@ export default function PlayMission() {
   }
 
   async function answer(q: Question, option: Option) {
-    if (!missionId) return;
+    if (!missionId || answering || !!selectedOptionId) return;
+    setAnswering(true);
     try {
       const completed = idx + 1 >= total;
       const result = await submitMissionAnswer({
@@ -141,6 +153,9 @@ export default function PlayMission() {
         totalQuestions: total,
         completed,
       });
+
+      setSelectedOptionId(option.id);
+      setSelectedIsCorrect(result.isCorrect);
 
       const baseTotal = totalCorrectLoaded ? totalCorrect : result.prevMissionCorrect;
       const updatedTotalCorrect = baseTotal - result.prevMissionCorrect + result.nextCorrect;
@@ -169,7 +184,8 @@ export default function PlayMission() {
           .filter(Boolean)
           .join('\n\n');
         Alert.alert('Missão concluída', finalMessage);
-        goBackOrReplace(router, { pathname: "/(aluno)/missoes" } as any);
+        setAnswering(false);
+        goBackOrReplace(router, { pathname: "/(aluno)/(tabs)/missoes" } as any);
       } else {
         if (newlyUnlocked.length) {
           const medalMessage =
@@ -180,11 +196,23 @@ export default function PlayMission() {
                   .join(', ')}!`;
           Alert.alert('Medalhas', medalMessage);
         }
-        setIdx((v) => v + 1);
+        setAnswering(false);
+        setReadyForNext(true);
       }
     } catch (e: any) {
       Alert.alert('Erro', e?.message ?? 'Não foi possível registrar sua resposta');
+      setAnswering(false);
+      setReadyForNext(false);
     }
+  }
+
+  function goToNextQuestion() {
+    if (!readyForNext) return;
+    setIdx((v) => v + 1);
+    setSelectedOptionId(null);
+    setSelectedIsCorrect(null);
+    setReadyForNext(false);
+    setAnswering(false);
   }
 
   const current = questions[idx];
@@ -215,16 +243,54 @@ export default function PlayMission() {
         <Text style={{ fontSize: 20, color: colors.navy900, fontFamily: 'Inter-Bold' }}>{current.prompt}</Text>
 
         <View style={{ gap: spacing.md }}>
-          {options.map((o) => (
-            <TouchableOpacity
-              key={o.id}
-              onPress={() => answer(current, o)}
-              style={{ backgroundColor: colors.white, padding: spacing.lg, borderRadius: radii.lg, ...shadows.soft }}
-            >
-              <Text style={{ color: colors.navy900 }}>{o.text}</Text>
-            </TouchableOpacity>
-          ))}
+          {options.map((o) => {
+            const isSelected = selectedOptionId === o.id;
+            const isCorrectSelection = isSelected && selectedIsCorrect;
+            const isWrongSelection = isSelected && selectedIsCorrect === false;
+            const bgColor = isCorrectSelection
+              ? colors.success
+              : isWrongSelection
+              ? colors.error
+              : colors.white;
+            const textColor = isSelected ? colors.white : colors.navy900;
+            return (
+              <TouchableOpacity
+                key={o.id}
+                onPress={() => answer(current, o)}
+                disabled={answering || !!selectedOptionId}
+                style={{
+                  backgroundColor: bgColor,
+                  padding: spacing.lg,
+                  borderRadius: radii.lg,
+                  borderWidth: 1,
+                  borderColor: isCorrectSelection
+                    ? colors.success
+                    : isWrongSelection
+                    ? colors.error
+                    : 'transparent',
+                  opacity: answering && !isSelected ? 0.8 : 1,
+                  ...shadows.soft,
+                }}
+              >
+                <Text style={{ color: textColor }}>{o.text}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
+        {readyForNext && (
+          <TouchableOpacity
+            onPress={goToNextQuestion}
+            style={{
+              marginTop: spacing.lg,
+              paddingVertical: spacing.md,
+              borderRadius: radii.lg,
+              backgroundColor: colors.brandCyan,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>Próxima pergunta</Text>
+          </TouchableOpacity>
+        )}
       </Animated.View>
     </View>
   );

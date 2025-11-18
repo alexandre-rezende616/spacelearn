@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { colors } from "../../../src/theme/tokens";
 import Logo from "../../../components/Logo";
+import { SpaceHeaderBackground } from "../../../src/components/SpaceHeaderBackground";
 
 // define rotas e icones das tabs do aluno
 export default function AlunoTabs() {
@@ -11,11 +12,13 @@ export default function AlunoTabs() {
       screenOptions={{
         headerShown: true,
         headerTitle: "",
-        headerStyle: { backgroundColor: colors.bgLight },
         headerShadowVisible: false,
-        headerRight: () => <Logo size={32} background="white" />,
+        headerBackground: () => <SpaceHeaderBackground />,
+        headerTintColor: colors.white,
+        headerRight: () => <Logo size={32} background="transparent" />,
         tabBarActiveTintColor: colors.brandPink,
-        tabBarInactiveTintColor: colors.navy800,
+        tabBarInactiveTintColor: colors.white,
+        tabBarStyle: { backgroundColor: '#05040F', borderTopColor: 'rgba(255,255,255,0.1)' },
       }}
     >
       <Tabs.Screen

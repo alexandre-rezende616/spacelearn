@@ -1,86 +1,50 @@
-// iuri meu bem painel inicial do aluno com progresso
-import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
-import { TopBar } from "../../../src/components/TopBar";
+import { useRouter } from "expo-router";
+import { ScrollView, Text, View } from "react-native";
+import { SpaceBackground } from "../../../src/components/SpaceBackground";
+import { SpaceButton } from "../../../src/components/SpaceButton";
+import { SpaceHUD } from "../../../src/components/SpaceHUD";
 import { colors, spacing } from "../../../src/theme/tokens";
-import { supabase } from "../../../src/lib/supabaseClient";
-import { useAuth } from "../../../src/store/useAuth";
-
-function computeLevel(xp: number) {
-  return Math.max(1, Math.floor(xp / 100) + 1);
-}
 
 export default function PainelAluno() {
-  const user = useAuth((s) => s.user);
-  const [coins, setCoins] = useState(0);
-  const [xp, setXp] = useState(0);
-  const [completed, setCompleted] = useState(0);
-
-  async function loadStats() {
-    if (!user?.id) return;
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("xp_total,coins_balance")
-      .eq("id", user.id)
-      .maybeSingle();
-    setCoins((profile?.coins_balance as number | null) ?? 0);
-    setXp((profile?.xp_total as number | null) ?? 0);
-    const { count } = await supabase
-      .from("progress")
-      .select("id", { count: "exact", head: true })
-      .eq("student_id", user.id)
-      .eq("completed", true);
-    setCompleted(count ?? 0);
-  }
-
-  useEffect(() => {
-    loadStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    const channel = supabase
-      .channel(`student-dashboard-${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "progress", filter: `student_id=eq.${user.id}` },
-        () => loadStats(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
-        () => loadStats(),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
-
-  const level = computeLevel(xp);
+  const router = useRouter();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bgLight }}>
-      <TopBar coins={coins} level={level} />
-      <View style={{ padding: spacing.lg }}>
-        <Text style={{ fontFamily: "Inter-Bold", fontSize: 22, color: colors.navy900 }}>
-          Bem-vindo(a) ao SpaceLearn!
-        </Text>
-        <Text style={{ marginTop: spacing.sm, color: colors.navy800 }}>
-          Seu progresso atual:
-        </Text>
-
-        <View style={{ marginTop: spacing.md, gap: spacing.xs }}>
-          <Text style={{ color: colors.navy900 }}>💰 Moedas: {coins}</Text>
-          <Text style={{ color: colors.navy900 }}>⚡ XP: {xp}</Text>
-          <Text style={{ color: colors.navy900 }}>🏆 Nível: {level}</Text>
-          <Text style={{ color: colors.navy900 }}>
-            🚀 Missões concluídas: {completed}
+    <SpaceBackground>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
+        <SpaceHUD />
+        <View style={{ gap: spacing.sm }}>
+          <Text style={{ fontFamily: "Inter-Bold", fontSize: 26, color: colors.white }}>
+            Bem-vindo(a) ao SpaceLearn!
+          </Text>
+          <Text style={{ color: colors.white, opacity: 0.8 }}>
+            Continue explorando as fases e personalize sua estrela com os recursos que conquistar.
           </Text>
         </View>
-      </View>
-    </View>
+
+        <View
+          style={{
+            borderRadius: spacing.md,
+            padding: spacing.lg,
+            backgroundColor: "rgba(255,255,255,0.05)",
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.1)",
+            gap: spacing.md,
+          }}
+        >
+          <Text style={{ color: colors.white, fontFamily: "Inter-Bold", fontSize: 18 }}>Próximos passos</Text>
+          <SpaceButton
+            label="Entrar em uma turma"
+            icon={<Text style={{ color: colors.white }}>👩‍🚀</Text>}
+            onPress={() => router.push("/(aluno)/(tabs)/turmas")}
+          />
+          <SpaceButton
+            label="Abrir caminho estelar"
+            icon={<Text style={{ color: colors.white }}>🪐</Text>}
+            onPress={() => router.push("/(aluno)/(tabs)/missoes")}
+            variant="secondary"
+          />
+        </View>
+      </ScrollView>
+    </SpaceBackground>
   );
 }

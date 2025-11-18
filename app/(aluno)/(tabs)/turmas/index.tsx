@@ -5,6 +5,9 @@ import { useRouter } from 'expo-router';
 import { colors, radii, shadows, spacing } from '../../../../src/theme/tokens';
 import { useAuth } from '../../../../src/store/useAuth';
 import { supabase } from '../../../../src/lib/supabaseClient';
+import { SpaceBackground } from '../../../../src/components/SpaceBackground';
+import { SpaceButton } from '../../../../src/components/SpaceButton';
+import { SpaceHUD } from '../../../../src/components/SpaceHUD';
 
 type ClassInfo = { id: string; name: string; code: string; created_at: string };
 type MessagePreview = { classId: string; content: string; created_at: string };
@@ -143,38 +146,7 @@ export default function TurmasAlunoIndex() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bgLight }}>
-      <View style={{ padding: spacing.lg, gap: spacing.sm }}>
-        <Text style={{ fontFamily: 'Inter-Bold', fontSize: 22, color: colors.navy900 }}>Minhas Turmas</Text>
-        <Text style={{ color: colors.navy800 }}>
-          Use o código compartilhado pelo professor para participar e acompanhar o caminho de missões.
-        </Text>
-        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <TextInput
-            placeholder="Código da turma"
-            autoCapitalize="characters"
-            value={code}
-            onChangeText={(value) => setCode(value.toUpperCase())}
-            style={{
-              flex: 1,
-              borderWidth: 1,
-              borderColor: colors.navy800,
-              borderRadius: radii.md,
-              backgroundColor: colors.white,
-              paddingHorizontal: spacing.md,
-              paddingVertical: 12,
-            }}
-          />
-          <TouchableOpacity
-            onPress={handleJoin}
-            disabled={loading}
-            style={{ backgroundColor: colors.brandCyan, paddingHorizontal: spacing.lg, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>Entrar</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
+    <SpaceBackground>
       <FlatList
         data={classes}
         keyExtractor={(cls) => cls.id}
@@ -184,10 +156,41 @@ export default function TurmasAlunoIndex() {
           await loadMyClasses();
           setRefreshing(false);
         }}
-        contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.sm }}
+        contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.sm, gap: spacing.md, paddingBottom: spacing.lg }}
+        ListHeaderComponent={
+          <View style={{ gap: spacing.md, marginBottom: spacing.md }}>
+            <SpaceHUD />
+            <View style={{ gap: spacing.sm }}>
+              <Text style={{ fontFamily: 'Inter-Bold', fontSize: 22, color: colors.white }}>Minhas Turmas</Text>
+              <Text style={{ color: colors.white, opacity: 0.8 }}>
+                Use o código compartilhado pelo professor para participar e acompanhar o caminho de missões.
+              </Text>
+              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                <TextInput
+                  placeholder="Código da turma"
+                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  autoCapitalize="characters"
+                  value={code}
+                  onChangeText={(value) => setCode(value.toUpperCase())}
+                  style={{
+                    flex: 1,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255,255,255,0.3)',
+                    borderRadius: radii.md,
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    color: colors.white,
+                    paddingHorizontal: spacing.md,
+                    paddingVertical: 12,
+                  }}
+                />
+                <SpaceButton label="Entrar" onPress={handleJoin} disabled={loading} />
+              </View>
+            </View>
+          </View>
+        }
         ListEmptyComponent={
           !loading ? (
-            <Text style={{ textAlign: 'center', color: colors.navy800, marginTop: spacing.xl }}>
+            <Text style={{ textAlign: 'center', color: colors.white, marginTop: spacing.xl }}>
               Você ainda não entrou em nenhuma turma.
             </Text>
           ) : null
@@ -200,7 +203,7 @@ export default function TurmasAlunoIndex() {
               entering={FadeInUp.duration(450).delay(index * 70)}
               style={{ backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, marginBottom: spacing.md, gap: spacing.md, ...shadows.soft }}
             >
-              <TouchableOpacity onPress={() => router.push({ pathname: "/(aluno)/turmas/[id]", params: { id: item.id } } as any)} activeOpacity={0.8}>
+              <TouchableOpacity onPress={() => router.push({ pathname: "/(aluno)/(tabs)/turmas/[id]", params: { id: item.id } } as any)} activeOpacity={0.8}>
                 <Text style={{ fontFamily: 'Inter-Bold', fontSize: 18, color: colors.navy900 }}>{item.name}</Text>
               </TouchableOpacity>
               <Text style={{ color: colors.navy800 }}>Código: {item.code}</Text>
@@ -212,32 +215,23 @@ export default function TurmasAlunoIndex() {
                   </Text>
                 </View>
               )}
-              <TouchableOpacity
-                onPress={() => router.push({ pathname: "/(aluno)/turmas/[id]", params: { id: item.id } } as any)}
-                style={{ alignSelf: 'flex-start', paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.brandCyan }}
-              >
-                <Text style={{ color: colors.brandCyan, fontFamily: 'Inter-Bold' }}>Ver detalhes</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => confirmLeave(item)}
-                disabled={leaving || loading}
-                style={{
-                  alignSelf: 'flex-start',
-                  paddingVertical: spacing.sm,
-                  paddingHorizontal: spacing.md,
-                  borderRadius: radii.md,
-                  backgroundColor: colors.brandPink,
-                  opacity: leaving || loading ? 0.6 : 1,
-                }}
-              >
-                <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>
-                  {leaving ? 'Saindo...' : 'Sair da turma'}
-                </Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                <SpaceButton
+                  label="Ver detalhes"
+                  variant="secondary"
+                  onPress={() => router.push({ pathname: "/(aluno)/(tabs)/turmas/[id]", params: { id: item.id } } as any)}
+                />
+                <SpaceButton
+                  label={leaving ? 'Saindo...' : 'Sair'}
+                  onPress={() => confirmLeave(item)}
+                  disabled={leaving || loading}
+                  icon={<Text style={{ color: colors.white }}>🚪</Text>}
+                />
+              </View>
             </Animated.View>
           );
         }}
       />
-    </View>
+    </SpaceBackground>
   );
 }

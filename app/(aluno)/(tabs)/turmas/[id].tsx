@@ -7,6 +7,9 @@ import { colors, radii, shadows, spacing } from '../../../../src/theme/tokens';
 import { supabase } from '../../../../src/lib/supabaseClient';
 import { useAuth } from '../../../../src/store/useAuth';
 import { goBackOrReplace } from '../../../../src/utils/navigation';
+import { SpaceBackground } from '../../../../src/components/SpaceBackground';
+import { SpaceHUD } from '../../../../src/components/SpaceHUD';
+import { SpaceButton } from '../../../../src/components/SpaceButton';
 
 type ClassRow = { id: string; name: string; code: string; created_at: string };
 type MissionInfo = { id: string; title: string; description: string | null; status: 'draft' | 'published'; orderIndex: number };
@@ -36,7 +39,7 @@ export default function TurmaDetalheAluno() {
       .maybeSingle();
     if (error || !data) {
       Alert.alert('Turma não encontrada', 'Este código pode estar incorreto ou a turma foi removida.');
-      goBackOrReplace(router, { pathname: "/(aluno)/turmas" } as any);
+      goBackOrReplace(router, { pathname: "/(aluno)/(tabs)/turmas" } as any);
       return;
     }
     setClassInfo(data as ClassRow);
@@ -158,7 +161,9 @@ export default function TurmaDetalheAluno() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bgLight }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.xl }}>
+    <SpaceBackground>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.xl }}>
+        <SpaceHUD />
       <View style={{ backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.sm, ...shadows.soft }}>
         <Text style={{ fontFamily: 'Inter-Bold', fontSize: 22, color: colors.navy900 }}>{classInfo.name}</Text>
         <Text style={{ color: colors.navy800 }}>Código: {classInfo.code}</Text>
@@ -201,15 +206,11 @@ export default function TurmaDetalheAluno() {
                 )}
               </View>
               {mission.status === 'published' && (
-                <TouchableOpacity
+                <SpaceButton
+                  label={completed ? 'Jogar novamente' : 'Iniciar missão'}
+                  icon={<Ionicons name="play" size={18} color={colors.white} />}
                   onPress={() => openMission(mission.id)}
-                  style={{ marginTop: spacing.sm, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
-                >
-                  <Ionicons name="play-circle" size={20} color={colors.brandCyan} />
-                  <Text style={{ color: colors.brandCyan, fontFamily: 'Inter-Bold' }}>
-                    {completed ? 'Jogar novamente' : 'Iniciar missão'}
-                  </Text>
-                </TouchableOpacity>
+                />
               )}
             </Animated.View>
           );
@@ -236,6 +237,7 @@ export default function TurmaDetalheAluno() {
           </Animated.View>
         ))}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SpaceBackground>
   );
 }

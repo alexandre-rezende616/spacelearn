@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { colors } from "../../src/theme/tokens";
 import Logo from "../../components/Logo";
+import { SpaceHeaderBackground } from "../../src/components/SpaceHeaderBackground";
 
 export default function ProfessorTabs() {
   return (
@@ -11,13 +12,13 @@ export default function ProfessorTabs() {
       screenOptions={{
         headerShown: true,
         headerTitle: "",
-        headerStyle: { backgroundColor: colors.bgLight },
         headerShadowVisible: false,
-        // Use logo configured for white background, slightly larger
-        headerRight: () => <Logo size={32} background="white" />,
+        headerBackground: () => <SpaceHeaderBackground />,
+        headerTintColor: colors.white,
+        headerRight: () => <Logo size={32} background="transparent" />,
         tabBarActiveTintColor: colors.brandCyan, // #00CFE5
-        tabBarInactiveTintColor: colors.navy800, // #1D1856
-        tabBarStyle: { backgroundColor: colors.white },
+        tabBarInactiveTintColor: colors.white,
+        tabBarStyle: { backgroundColor: '#05040F', borderTopColor: 'rgba(255,255,255,0.1)' },
         tabBarLabelStyle: { fontFamily: "Inter-Medium" },
       }}
     >
