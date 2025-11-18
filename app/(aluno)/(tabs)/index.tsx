@@ -1,10 +1,10 @@
 // iuri meu bem painel inicial do aluno com progresso
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
-import { TopBar } from "../../src/components/TopBar";
-import { colors, spacing } from "../../src/theme/tokens";
-import { supabase } from "../../src/lib/supabaseClient";
-import { useAuth } from "../../src/store/useAuth";
+import { TopBar } from "../../../src/components/TopBar";
+import { colors, spacing } from "../../../src/theme/tokens";
+import { supabase } from "../../../src/lib/supabaseClient";
+import { useAuth } from "../../../src/store/useAuth";
 
 function computeLevel(xp: number) {
   return Math.max(1, Math.floor(xp / 100) + 1);

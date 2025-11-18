@@ -3,10 +3,10 @@ import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, shadows, spacing } from '../../../src/theme/tokens';
-import { supabase } from '../../../src/lib/supabaseClient';
-import { useAuth } from '../../../src/store/useAuth';
-import { goBackOrReplace } from '../../../src/utils/navigation';
+import { colors, radii, shadows, spacing } from '../../../../src/theme/tokens';
+import { supabase } from '../../../../src/lib/supabaseClient';
+import { useAuth } from '../../../../src/store/useAuth';
+import { goBackOrReplace } from '../../../../src/utils/navigation';
 
 type ClassRow = { id: string; name: string; code: string; created_at: string };
 type MissionInfo = { id: string; title: string; description: string | null; status: 'draft' | 'published'; orderIndex: number };

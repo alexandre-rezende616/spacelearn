@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Alert, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { colors, radii, shadows, spacing } from '../../../src/theme/tokens';
-import { useAuth } from '../../../src/store/useAuth';
-import { supabase } from '../../../src/lib/supabaseClient';
+import { colors, radii, shadows, spacing } from '../../../../src/theme/tokens';
+import { useAuth } from '../../../../src/store/useAuth';
+import { supabase } from '../../../../src/lib/supabaseClient';
 
 type ClassInfo = { id: string; name: string; code: string; created_at: string };
 type MessagePreview = { classId: string; content: string; created_at: string };
@@ -91,20 +91,13 @@ export default function TurmasAlunoIndex() {
     if (!trimmed) return;
     try {
       setLoading(true);
-      const { data: cls, error: findErr } = await supabase
-        .from('classes')
-        .select('id,name,code,created_at')
-        .eq('code', trimmed)
-        .maybeSingle();
-      if (findErr) throw findErr;
+      const { data, error: joinErr } = await supabase.rpc('student_join_class_by_code', { p_code: trimmed });
+      if (joinErr) throw joinErr;
+      const cls = (data && data[0]) as ClassInfo | undefined;
       if (!cls) {
         Alert.alert('Código inválido', 'Turma não encontrada para este código.');
         return;
       }
-      const { error: enrollErr } = await supabase
-        .from('enrollments')
-        .upsert({ class_id: cls.id, student_id: user.id }, { onConflict: 'class_id,student_id', ignoreDuplicates: true });
-      if (enrollErr) throw enrollErr;
       setCode('');
       await loadMyClasses();
       Alert.alert('Sucesso', `Você entrou na turma ${cls.name}.`);

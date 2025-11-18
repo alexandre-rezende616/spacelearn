@@ -35,6 +35,7 @@ export default function TurmaDetalhesProfessor() {
   const [newMessage, setNewMessage] = useState('');
   const [postingMessage, setPostingMessage] = useState(false);
   const [deletingClass, setDeletingClass] = useState(false);
+  const [removingStudentId, setRemovingStudentId] = useState<string | null>(null);
 
   const [missionModalOpen, setMissionModalOpen] = useState(false);
   const [availableMissions, setAvailableMissions] = useState<MissionInfo[]>([]);
@@ -86,6 +87,39 @@ export default function TurmaDetalhesProfessor() {
       }))
       .sort((a, b) => (a.nome ?? '').localeCompare(b.nome ?? ''));
     setStudents(ordered);
+  }
+
+  function confirmRemoveStudent(student: StudentRow) {
+    Alert.alert(
+      'Remover aluno',
+      `Deseja remover ${student.nome ?? 'este aluno'} da turma?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: () => removeStudent(student),
+        },
+      ],
+    );
+  }
+
+  async function removeStudent(student: StudentRow) {
+    if (!classId) return;
+    try {
+      setRemovingStudentId(student.id);
+      const { error } = await supabase
+        .from('enrollments')
+        .delete()
+        .eq('class_id', classId)
+        .eq('student_id', student.id);
+      if (error) throw error;
+      await loadStudents();
+    } catch (err: any) {
+      Alert.alert('Erro', err?.message ?? 'Não foi possível remover o aluno.');
+    } finally {
+      setRemovingStudentId(null);
+    }
   }
 
   async function loadAssignments() {
@@ -471,9 +505,24 @@ export default function TurmaDetalhesProfessor() {
           <Animated.View
             key={student.id}
             entering={FadeInUp.duration(350).delay(index * 60)}
-            style={{ backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, ...shadows.soft }}
+            style={{ backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.xs, ...shadows.soft }}
           >
             <Text style={{ fontFamily: 'Inter-Bold', color: colors.navy900 }}>{student.nome ?? 'Aluno'}</Text>
+            <TouchableOpacity
+              onPress={() => confirmRemoveStudent(student)}
+              disabled={removingStudentId === student.id}
+              style={{
+                alignSelf: 'flex-start',
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.xs,
+                borderRadius: radii.md,
+                backgroundColor: colors.brandPink,
+              }}
+            >
+              <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>
+                {removingStudentId === student.id ? 'Removendo...' : 'Remover aluno'}
+              </Text>
+            </TouchableOpacity>
           </Animated.View>
         ))}
       </View>

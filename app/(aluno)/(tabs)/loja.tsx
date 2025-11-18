@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { colors, radii, shadows, spacing } from "../../src/theme/tokens";
-import { fonts, fontSizes } from "../../src/theme/typography";
-import { supabase } from "../../src/lib/supabaseClient";
-import { useAuth } from "../../src/store/useAuth";
+import { colors, radii, shadows, spacing } from "../../../src/theme/tokens";
+import { fonts, fontSizes } from "../../../src/theme/typography";
+import { supabase } from "../../../src/lib/supabaseClient";
+import { useAuth } from "../../../src/store/useAuth";
 
 type FrameOption = { key: string; name: string; description: string; cost: number };
 

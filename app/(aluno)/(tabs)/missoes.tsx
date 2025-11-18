@@ -2,18 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { colors, radii, shadows, spacing } from '../../src/theme/tokens';
-import { supabase } from '../../src/lib/supabaseClient';
-import { useAuth } from '../../src/store/useAuth';
+import { colors, radii, shadows, spacing } from '../../../src/theme/tokens';
+import { useAuth } from '../../../src/store/useAuth';
+import { fetchStudentMissions } from '../../../src/modules/missionFlow/api';
+import type { MissionWithClasses } from '../../../src/modules/missionFlow/types';
 
-type Mission = { id: string; title: string; description: string | null; status: 'draft'|'published'; };
-type MCRow = { mission_id: string; class_id: string; classes?: { id: string; name: string } | null };
+import { supabase } from '../../../src/lib/supabaseClient';
 
 export default function MissoesAluno() {
   const router = useRouter();
   const user = useAuth((s) => s.user);
-  const [missions, setMissions] = useState<Mission[]>([]);
-  const [byMissionClasses, setByMissionClasses] = useState<Record<string, {id:string;name:string}[]>>({});
+  const [missions, setMissions] = useState<MissionWithClasses[]>([]);
   const [loading, setLoading] = useState(false);
   const [classIds, setClassIds] = useState<string[]>([]);
 
@@ -21,42 +20,9 @@ export default function MissoesAluno() {
     if (!user?.id) return;
     try {
       setLoading(true);
-      // 1) classes do aluno
-      const { data: enrolls, error: e1 } = await supabase
-        .from('enrollments')
-        .select('class_id')
-        .eq('student_id', user.id);
-      if (e1) throw e1;
-      const cIds = (enrolls ?? []).map((e: any) => e.class_id);
-      setClassIds(cIds);
-      if (cIds.length === 0) { setMissions([]); setByMissionClasses({}); return; }
-
-      // 2) mission_classes para essas turmas, com nomes das turmas
-      const { data: mcs, error: e2 } = await supabase
-        .from('mission_classes')
-        .select('mission_id, class_id, classes(id,name)')
-        .in('class_id', cIds);
-      if (e2) throw e2;
-      const missionClassRows: MCRow[] = ((mcs ?? []) as unknown) as MCRow[];
-      const missionIds = Array.from(new Set(missionClassRows.map((mc) => mc.mission_id)));
-
-      // 3) missões publicadas
-      const { data: miss, error: e3 } = await supabase
-        .from('missions')
-        .select('id,title,description,status')
-        .in('id', missionIds)
-        .eq('status', 'published');
-      if (e3) throw e3;
-
-      setMissions(miss as Mission[] || []);
-
-      // map missões -> classes
-      const map: Record<string, {id:string;name:string}[]> = {};
-      missionClassRows.forEach((mc) => {
-        if (!map[mc.mission_id]) map[mc.mission_id] = [];
-        if (mc.classes) map[mc.mission_id].push({ id: mc.classes.id, name: mc.classes.name });
-      });
-      setByMissionClasses(map);
+      const payload = await fetchStudentMissions(user.id);
+      setMissions(payload.missions);
+      setClassIds(payload.classIds);
     } catch (e: any) {
       Alert.alert('Erro', e?.message ?? 'Não foi possível carregar missões');
     } finally {
@@ -74,7 +40,8 @@ export default function MissoesAluno() {
   // Realtime: mudanças em mission_classes das turmas do aluno
   useEffect(() => {
     if (!classIds.length) return;
-    const channel = supabase.channel(`student-mc-${classIds.sort().join('-').slice(0,40)}`);
+    const sortedKey = [...classIds].sort().join('-');
+    const channel = supabase.channel(`student-mc-${sortedKey.slice(0, 40)}`);
     classIds.forEach((cid) => {
       channel.on(
         'postgres_changes',
@@ -101,11 +68,13 @@ export default function MissoesAluno() {
         contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.md }}
         ListEmptyComponent={!loading ? (
           <Text style={{ textAlign: 'center', color: colors.navy800, marginTop: spacing.xl }}>
-            Nenhuma missão disponível.
+            {classIds.length === 0
+              ? 'Entre em uma turma para liberar as missões.'
+              : 'Nenhuma missão disponível no momento.'}
           </Text>
         ) : null}
         renderItem={({ item, index }) => {
-          const classes = byMissionClasses[item.id] ?? [];
+          const classes = item.classes ?? [];
           return (
             <Animated.View
               entering={FadeInUp.duration(450).delay(index * 80)}

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Text, View } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import { colors, radii, shadows, spacing } from "../../src/theme/tokens";
-import { supabase } from "../../src/lib/supabaseClient";
-import { useAuth } from "../../src/store/useAuth";
+import { colors, radii, shadows, spacing } from "../../../src/theme/tokens";
+import { supabase } from "../../../src/lib/supabaseClient";
+import { useAuth } from "../../../src/store/useAuth";
 
 type MedalRow = {
   id: string;

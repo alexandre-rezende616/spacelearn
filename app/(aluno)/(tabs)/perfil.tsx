@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { colors, radii, shadows, spacing } from "../../src/theme/tokens";
-import { fonts, fontSizes } from "../../src/theme/typography";
-import { useAuth } from "../../src/store/useAuth";
-import { supabase } from "../../src/lib/supabaseClient";
-import AccountCard from "../../components/AccountCard";
+import { colors, radii, shadows, spacing } from "../../../src/theme/tokens";
+import { fonts, fontSizes } from "../../../src/theme/typography";
+import { useAuth } from "../../../src/store/useAuth";
+import { supabase } from "../../../src/lib/supabaseClient";
+import AccountCard from "../../../components/AccountCard";
 
 function computeLevel(xp: number) {
   return Math.max(1, Math.floor(xp / 100) + 1);
