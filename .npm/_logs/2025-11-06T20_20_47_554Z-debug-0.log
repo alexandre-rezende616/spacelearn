@@ -1,0 +1,42 @@
+0 verbose cli /usr/bin/node /usr/bin/npm
+1 info using npm@10.8.2
+2 info using node@v20.19.5
+3 silly config load:file:/usr/lib/node_modules/npm/npmrc
+4 silly config load:file:/mnt/c/Users/xandi/OneDrive/Desktop/spacelearn/node_modules/unrs-resolver/npm-install/.npmrc
+5 silly config load:file:/mnt/c/Users/xandi/OneDrive/Desktop/spacelearn/.npmrc
+6 silly config load:file:/usr/etc/npmrc
+7 verbose title npm install @unrs/resolver-binding-linux-x64-gnu@1.11.1
+8 verbose argv "install" "--loglevel" "error" "--prefer-offline" "--no-audit" "--progress" "false" "@unrs/resolver-binding-linux-x64-gnu@1.11.1"
+9 verbose logfile logs-max:10 dir:/mnt/c/Users/xandi/OneDrive/Desktop/spacelearn/.npm/_logs/2025-11-06T20_20_47_554Z-
+10 verbose logfile /mnt/c/Users/xandi/OneDrive/Desktop/spacelearn/.npm/_logs/2025-11-06T20_20_47_554Z-debug-0.log
+11 silly packumentCache heap:2197815296 maxSize:549453824 maxEntrySize:274726912
+12 silly logfile start cleaning logs, removing 1 files
+13 silly logfile done cleaning log files
+14 silly idealTree buildDeps
+15 silly fetch manifest @unrs/resolver-binding-linux-x64-gnu@1.11.1
+16 silly packumentCache full:https://registry.npmjs.org/@unrs%2fresolver-binding-linux-x64-gnu cache-miss
+17 http fetch GET https://registry.npmjs.org/@unrs%2fresolver-binding-linux-x64-gnu attempt 1 failed with EAI_AGAIN
+18 http fetch GET https://registry.npmjs.org/@unrs%2fresolver-binding-linux-x64-gnu attempt 2 failed with EAI_AGAIN
+19 http fetch GET https://registry.npmjs.org/@unrs%2fresolver-binding-linux-x64-gnu attempt 3 failed with EAI_AGAIN
+20 silly placeDep ROOT @unrs/resolver-binding-linux-x64-gnu@ OK for:  want: 1.11.1
+21 verbose type system
+22 verbose stack FetchError: request to https://registry.npmjs.org/@unrs%2fresolver-binding-linux-x64-gnu failed, reason: getaddrinfo EAI_AGAIN registry.npmjs.org
+22 verbose stack     at ClientRequest.<anonymous> (/usr/lib/node_modules/npm/node_modules/minipass-fetch/lib/index.js:130:14)
+22 verbose stack     at ClientRequest.emit (node:events:524:28)
+22 verbose stack     at emitErrorEvent (node:_http_client:101:11)
+22 verbose stack     at _destroy (node:_http_client:884:9)
+22 verbose stack     at onSocketNT (node:_http_client:904:5)
+22 verbose stack     at process.processTicksAndRejections (node:internal/process/task_queues:83:21)
+23 error code EAI_AGAIN
+24 error syscall getaddrinfo
+25 error errno EAI_AGAIN
+26 error request to https://registry.npmjs.org/@unrs%2fresolver-binding-linux-x64-gnu failed, reason: getaddrinfo EAI_AGAIN registry.npmjs.org
+27 silly unfinished npm timer reify 1762460448166
+28 silly unfinished npm timer reify:loadTrees 1762460448188
+29 verbose cwd /mnt/c/Users/xandi/OneDrive/Desktop/spacelearn/node_modules/unrs-resolver/npm-install
+30 verbose os Linux 6.6.87.2-microsoft-standard-WSL2
+31 verbose node v20.19.5
+32 verbose npm  v10.8.2
+33 verbose exit 1
+34 verbose code 1
+35 error A complete log of this run can be found in: /mnt/c/Users/xandi/OneDrive/Desktop/spacelearn/.npm/_logs/2025-11-06T20_20_47_554Z-debug-0.log

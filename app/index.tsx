@@ -11,14 +11,19 @@ export default function Home() {
         SpaceLearn
       </Text>
       <View style={{ gap: spacing.md }}>
-        <Link href="/(aluno)" asChild>
+        <Link href={{ pathname: "/(aluno)" } as any} asChild>
           <TouchableOpacity style={{ backgroundColor: colors.brandCyan, padding: spacing.lg, borderRadius: radii.lg, ...shadows.soft }}>
             <Text style={{ color: colors.white, textAlign: "center", fontFamily: "Inter-Bold", fontSize: 18 }}>Entrar como Aluno</Text>
           </TouchableOpacity>
         </Link>
-        <Link href="/(professor)" asChild>
+        <Link href={{ pathname: "/(professor)" } as any} asChild>
           <TouchableOpacity style={{ backgroundColor: colors.brandPink, padding: spacing.lg, borderRadius: radii.lg, ...shadows.soft }}>
             <Text style={{ color: colors.white, textAlign: "center", fontFamily: "Inter-Bold", fontSize: 18 }}>Entrar como Professor</Text>
+          </TouchableOpacity>
+        </Link>
+        <Link href={{ pathname: "/(coordenador)" } as any} asChild>
+          <TouchableOpacity style={{ backgroundColor: colors.navy900, padding: spacing.lg, borderRadius: radii.lg, ...shadows.soft }}>
+            <Text style={{ color: colors.white, textAlign: "center", fontFamily: "Inter-Bold", fontSize: 18 }}>Entrar como Coordenador</Text>
           </TouchableOpacity>
         </Link>
       </View>

@@ -2,6 +2,7 @@
 import { View, Text, TouchableOpacity, Dimensions, ScrollView } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { colors, radii, spacing, shadows } from "../../src/theme/tokens";
 import { useAuth } from "../../src/store/useAuth";
 import { supabase } from "../../src/lib/supabaseClient";
@@ -16,6 +17,7 @@ type InfoCard = {
 
 export default function PainelProfessor() {
   const { user } = useAuth();
+  const router = useRouter();
   const [nome, setNome] = useState<string | null>(null);
   const [counts, setCounts] = useState({ classes: 0, missions: 0, medals: 0, students: 0 });
 
@@ -48,17 +50,18 @@ export default function PainelProfessor() {
 
   const cards: InfoCard[] = useMemo(() => [
       { key: 'turmas', title: 'Turmas ativas', value: counts.classes, icon: 'people', tint: colors.brandCyan },
-      { key: 'missoes', title: 'Missões publicadas', value: counts.missions, icon: 'flag', tint: colors.brandPink },
-      { key: 'medalhas', title: 'Conquistas (concluídas)', value: counts.medals, icon: 'ribbon', tint: colors.navy800 },
+      { key: 'missoes', title: 'Missões na jornada', value: counts.missions, icon: 'flag', tint: colors.brandPink },
+      { key: 'medalhas', title: 'Missões concluídas', value: counts.medals, icon: 'ribbon', tint: colors.navy800 },
       { key: 'alunos', title: 'Total de alunos', value: counts.students, icon: 'rocket', tint: colors.navy900 },
     ], [counts]);
   useEffect(() => {
-    if (!user?.id) return;
+    const userId = user?.id;
+    if (!userId) return;
     async function fetchCounts() {
       try {
-        const c1 = await supabase.from('classes').select('id', { count: 'exact', head: true }).eq('teacher_id', user.id);
+        const c1 = await supabase.from('classes').select('id', { count: 'exact', head: true }).eq('teacher_id', userId);
         const classesCount = c1.count ?? 0;
-        const { data: cls } = await supabase.from('classes').select('id').eq('teacher_id', user.id);
+        const { data: cls } = await supabase.from('classes').select('id').eq('teacher_id', userId);
         const classIds = (cls ?? []).map((r: any) => r.id);
         let studentsCount = 0;
         if (classIds.length) {
@@ -66,11 +69,14 @@ export default function PainelProfessor() {
           const uniq = new Set((enr ?? []).map((e: any) => e.student_id));
           studentsCount = uniq.size;
         }
-        const c2 = await supabase.from('missions').select('id', { count: 'exact', head: true }).eq('created_by', user.id).eq('status', 'published');
-        const missionsCount = c2.count ?? 0;
+        let missionsCount = 0;
+        let missionIds: string[] = [];
+        if (classIds.length) {
+          const { data: missionLinks } = await supabase.from('mission_classes').select('mission_id').in('class_id', classIds);
+          missionIds = Array.from(new Set((missionLinks ?? []).map((row: any) => row.mission_id)));
+          missionsCount = missionIds.length;
+        }
         let medalsCount = 0;
-        const { data: mids } = await supabase.from('missions').select('id').eq('created_by', user.id);
-        const missionIds = (mids ?? []).map((m: any) => m.id);
         if (missionIds.length) {
           const { data: prog } = await supabase.from('progress').select('id,completed').in('mission_id', missionIds).eq('completed', true);
           medalsCount = (prog ?? []).length;
@@ -80,10 +86,10 @@ export default function PainelProfessor() {
     }
     fetchCounts();
     const ch = supabase
-      .channel(`prof-dashboard-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'classes', filter: `teacher_id=eq.${user.id}` }, fetchCounts)
+      .channel(`prof-dashboard-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'classes', filter: `teacher_id=eq.${userId}` }, fetchCounts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollments' }, fetchCounts)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'missions', filter: `created_by=eq.${user.id}` }, fetchCounts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mission_classes' }, fetchCounts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'progress' }, fetchCounts)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
@@ -163,7 +169,7 @@ export default function PainelProfessor() {
 
         <View style={{ gap: spacing.md }}>
           <TouchableOpacity
-            onPress={() => (require("expo-router").useRouter().push("/(professor)/missoes"))}
+            onPress={() => router.push("/(professor)/missoes")}
             style={{
               backgroundColor: colors.brandCyan,
               paddingVertical: spacing.lg,
@@ -175,7 +181,7 @@ export default function PainelProfessor() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => (require("expo-router").useRouter().push("/(professor)/turmas"))}
+            onPress={() => router.push("/(professor)/turmas")}
             style={{
               backgroundColor: colors.white,
               paddingVertical: spacing.lg,
@@ -189,7 +195,7 @@ export default function PainelProfessor() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => console.log("Gerenciar medalhas")}
+            onPress={() => router.push("/(professor)/medalhas")}
             style={{
               backgroundColor: colors.brandPink,
               paddingVertical: spacing.lg,

@@ -9,18 +9,19 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  async function getUserRole(userId: string): Promise<"aluno" | "professor"> {
+  async function getUserRole(userId: string): Promise<"aluno" | "professor" | "coordenador"> {
     try {
       const { data, error } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", userId)
         .maybeSingle();
-      if (data?.role) return data.role as "aluno" | "professor";
+      if (data?.role) return data.role as "aluno" | "professor" | "coordenador";
       if (error) console.log("Erro ao buscar role (profiles):", error.message);
       const { data: userData } = await supabase.auth.getUser();
-      const metaRole = (userData.user?.user_metadata?.role as "aluno" | "professor" | undefined) ?? "aluno";
+      const metaRole = (userData.user?.user_metadata?.role as "aluno" | "professor" | "coordenador" | undefined) ?? "aluno";
       return metaRole;
     } catch (e: any) {
       console.log("Exceção ao buscar role:", e?.message);
@@ -28,7 +29,7 @@ export default function LoginScreen() {
     }
   }
 
-  async function ensureProfile(userId: string, role: "aluno" | "professor", nomeFromMeta?: string | null) {
+  async function ensureProfile(userId: string, role: "aluno" | "professor" | "coordenador", nomeFromMeta?: string | null) {
     try {
       const payload: any = { id: userId, role };
       if (nomeFromMeta && String(nomeFromMeta).trim().length > 0) payload.nome = String(nomeFromMeta).trim();
@@ -87,20 +88,35 @@ export default function LoginScreen() {
         }}
       />
 
-      <TextInput
-        placeholder="Senha"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-        style={{
-          borderWidth: 1,
-          borderColor: colors.navy900,
-          padding: spacing.md,
-          borderRadius: radii.md,
-          marginBottom: spacing.lg,
-          backgroundColor: colors.white,
-        }}
-      />
+      <View style={{ position: "relative", marginBottom: spacing.lg }}>
+        <TextInput
+          placeholder="Senha"
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={setPassword}
+          style={{
+            borderWidth: 1,
+            borderColor: colors.navy900,
+            padding: spacing.md,
+            borderRadius: radii.md,
+            backgroundColor: colors.white,
+            paddingRight: spacing.xl,
+          }}
+        />
+        <TouchableOpacity
+          onPress={() => setShowPassword((prev) => !prev)}
+          style={{
+            position: "absolute",
+            right: spacing.sm,
+            top: "50%",
+            transform: [{ translateY: -12 }],
+          }}
+        >
+          <Text style={{ color: colors.brandCyan, fontFamily: "Inter-Bold" }}>
+            {showPassword ? "Ocultar" : "Mostrar"}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         onPress={handleSignIn}

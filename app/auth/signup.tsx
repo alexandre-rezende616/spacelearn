@@ -5,7 +5,7 @@ import { supabase } from "../../src/lib/supabaseClient";
 import { colors, radii, spacing } from "../../src/theme/tokens";
 import { fonts, fontSizes } from "../../src/theme/typography";
 
-type RoleOption = "aluno" | "professor";
+type RoleOption = "aluno" | "professor" | "coordenador";
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -19,6 +19,7 @@ export default function SignUpScreen() {
   function validateKey() {
     if (role === "aluno" && accessKey !== "ALUNO2025") return false;
     if (role === "professor" && accessKey !== "PROF2025") return false;
+    if (role === "coordenador" && accessKey !== "COORD2025") return false;
     return true;
   }
 
@@ -146,6 +147,23 @@ export default function SignUpScreen() {
         >
           <Text style={{ color: role === "professor" ? colors.white : colors.navy900, fontFamily: fonts.bold }}>
             Professor
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setRole("coordenador")}
+          style={{
+            flex: 1,
+            padding: spacing.md,
+            borderRadius: radii.md,
+            alignItems: "center",
+            backgroundColor: role === "coordenador" ? colors.navy800 : colors.white,
+            borderWidth: 1,
+            borderColor: colors.navy900,
+          }}
+        >
+          <Text style={{ color: role === "coordenador" ? colors.white : colors.navy900, fontFamily: fonts.bold }}>
+            Coordenador
           </Text>
         </TouchableOpacity>
       </View>
