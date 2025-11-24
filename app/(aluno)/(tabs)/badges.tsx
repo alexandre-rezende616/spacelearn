@@ -26,20 +26,25 @@ export default function MedalhasAluno() {
     if (!user?.id) return;
     try {
       setLoading(true);
-      const [medalsResp, progressResp] = await Promise.all([
-        supabase.from("medals").select("id,title,description,required_correct,teacher_id"),
-        supabase.from("progress").select("correct_count").eq("student_id", user.id),
-      ]);
 
-      if (medalsResp.error) throw medalsResp.error;
-      if (progressResp.error) throw progressResp.error;
+      // 1. Busca as medalhas
+      const { data: medalsData, error: medalsError } = await supabase
+        .from("medals")
+        .select("id,title,description,required_correct,teacher_id");
 
-      setMedals((medalsResp.data as MedalRow[]) ?? []);
-      const total = (progressResp.data ?? []).reduce(
-        (sum, row: any) => sum + ((row.correct_count as number | null) ?? 0),
-        0
-      );
-      setTotalCorrect(total);
+      if (medalsError) throw medalsError;
+      setMedals((medalsData as MedalRow[]) ?? []);
+
+      // 2. CONTA os acertos na tabela ATTEMPTS
+      const { count, error: countError } = await supabase
+        .from("attempts")
+        .select("*", { count: "exact", head: true })
+        .eq("student_id", user.id)
+        .eq("is_correct", true);
+
+      if (countError) throw countError;
+      setTotalCorrect(count ?? 0);
+
     } catch (err: any) {
       Alert.alert("Erro", err?.message ?? "Não foi possível carregar suas medalhas.");
     } finally {
@@ -57,7 +62,7 @@ export default function MedalhasAluno() {
       .channel(`student-medals-${user.id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "progress", filter: `student_id=eq.${user.id}` },
+        { event: "*", schema: "public", table: "attempts", filter: `student_id=eq.${user.id}` },
         loadData
       )
       .on("postgres_changes", { event: "*", schema: "public", table: "medals" }, loadData)
@@ -145,8 +150,8 @@ export default function MedalhasAluno() {
                 </Text>
                 <View
                   style={{
-                    backgroundColor: item.unlocked ? colors.brandCyan : colors.navy200,
-                    borderRadius: radii.full,
+                    backgroundColor: item.unlocked ? colors.brandCyan : colors.bgLight,
+                    borderRadius: radii.pill, 
                     paddingHorizontal: spacing.sm,
                     paddingVertical: 4,
                   }}
@@ -170,7 +175,7 @@ export default function MedalhasAluno() {
                 style={{
                   height: 10,
                   borderRadius: radii.md,
-                  backgroundColor: colors.navy100,
+                  backgroundColor: colors.bgLight,
                   overflow: "hidden",
                 }}
               >

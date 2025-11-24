@@ -14,6 +14,9 @@ type MissionInfo = { id: string; title: string; description: string | null; stat
 type MissionAssignment = { mission: MissionInfo; orderIndex: number };
 type MessageRow = { id: string; content: string; created_at: string };
 
+// Novo tipo para as tentativas
+type AttemptRow = { student_id: string; is_correct: boolean };
+
 async function copyToClipboard(text: string) {
   try {
     const Clipboard = await import('expo-clipboard');
@@ -40,6 +43,11 @@ export default function TurmaDetalhesProfessor() {
   const [missionModalOpen, setMissionModalOpen] = useState(false);
   const [availableMissions, setAvailableMissions] = useState<MissionInfo[]>([]);
   const [loadingMissions, setLoadingMissions] = useState(false);
+
+  // --- NOVOS ESTADOS PARA ESTATÍSTICAS ---
+  const [classStats, setClassStats] = useState({ average: 0, total: 0 });
+  const [studentGrades, setStudentGrades] = useState<Record<string, string>>({});
+  // ---------------------------------------
 
   const missionIds = useMemo(() => assignments.map((assignment) => assignment.mission.id), [assignments]);
 
@@ -68,17 +76,25 @@ export default function TurmaDetalhesProfessor() {
     });
   }
 
-  async function loadStudents() {
+  async function loadStudentsAndStats() {
     if (!classId) return;
+    
+    // 1. Carrega Enrollments (IDs)
     const { data: enrollRows } = await supabase
       .from('enrollments')
       .select('student_id')
       .eq('class_id', classId);
+    
     const studentIds = (enrollRows ?? []).map((row: any) => row.student_id);
+    
     if (studentIds.length === 0) {
       setStudents([]);
+      setStudentGrades({});
+      setClassStats({ average: 0, total: 0 });
       return;
     }
+
+    // 2. Carrega Profiles (Nomes)
     const { data: profileRows } = await supabase.from('profiles').select('id,nome').in('id', studentIds);
     const ordered = (profileRows ?? [])
       .map((row: any) => ({
@@ -87,6 +103,40 @@ export default function TurmaDetalhesProfessor() {
       }))
       .sort((a, b) => (a.nome ?? '').localeCompare(b.nome ?? ''));
     setStudents(ordered);
+    //Lexandre, aqui começa os calculos... :D
+    // 3. --- LÓGICA DE CÁLCULO DE MÉDIA ---
+    try {
+      const { data: attemptsData } = await supabase
+        .from('attempts')
+        .select('student_id, is_correct')
+        .in('student_id', studentIds);
+      
+      const attempts = (attemptsData as AttemptRow[]) ?? [];
+
+      // Média Global
+      let globalAvg = 0;
+      if (attempts.length > 0) {
+        const totalCorrect = attempts.filter(a => a.is_correct).length;
+        globalAvg = (totalCorrect / attempts.length) * 100;
+      }
+      setClassStats({ average: globalAvg, total: attempts.length });
+
+      // Média Individual
+      const gradesMap: Record<string, string> = {};
+      studentIds.forEach((sid) => {
+        const myAttempts = attempts.filter(a => a.student_id === sid);
+        if (myAttempts.length > 0) {
+          const myCorrect = myAttempts.filter(a => a.is_correct).length;
+          const nota = (myCorrect / myAttempts.length) * 10;
+          gradesMap[sid] = nota.toFixed(1);
+        }
+      });
+      setStudentGrades(gradesMap);
+
+    } catch (e) {
+      console.log("Erro ao calcular notas:", e);
+    }
+    // -------------------------------------
   }
 
   function confirmRemoveStudent(student: StudentRow) {
@@ -114,7 +164,7 @@ export default function TurmaDetalhesProfessor() {
         .eq('class_id', classId)
         .eq('student_id', student.id);
       if (error) throw error;
-      await loadStudents();
+      await loadStudentsAndStats();
     } catch (err: any) {
       Alert.alert('Erro', err?.message ?? 'Não foi possível remover o aluno.');
     } finally {
@@ -193,7 +243,7 @@ export default function TurmaDetalhesProfessor() {
   useEffect(() => {
     if (!classId || !user?.id) return;
     loadClassInfo();
-    loadStudents();
+    loadStudentsAndStats(); // Mudamos o nome da função
     loadAssignments();
     loadMessages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -206,7 +256,7 @@ export default function TurmaDetalhesProfessor() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'enrollments', filter: `class_id=eq.${classId}` },
-        () => loadStudents(),
+        () => loadStudentsAndStats(),
       )
       .on(
         'postgres_changes',
@@ -217,6 +267,12 @@ export default function TurmaDetalhesProfessor() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'class_messages', filter: `class_id=eq.${classId}` },
         () => loadMessages(),
+      )
+      // --- Adicionado: Escutar tabela attempts para atualizar notas em tempo real ---
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'attempts' },
+        () => loadStudentsAndStats(), // Recarrega as estatísticas
       )
       .subscribe();
 
@@ -426,6 +482,25 @@ export default function TurmaDetalhesProfessor() {
         </Text>
       </View>
 
+      {/* --- NOVO: CARD DE ESTATÍSTICAS --- */}
+      <View style={{ backgroundColor: colors.navy900, borderRadius: radii.lg, padding: spacing.lg, ...shadows.soft }}>
+        <Text style={{ color: colors.white, fontFamily: 'Inter-Regular', fontSize: 14, opacity: 0.8 }}>
+          Desempenho da Turma (Acertos)
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: spacing.xs }}>
+          <Text style={{ color: colors.brandCyan, fontFamily: 'Inter-Bold', fontSize: 36 }}>
+            {classStats.average.toFixed(0)}%
+          </Text>
+          <Text style={{ color: colors.white, marginBottom: 6, marginLeft: spacing.xs, fontFamily: 'Inter-Medium' }}>
+            de precisão média
+          </Text>
+        </View>
+        <Text style={{ color: colors.white, fontSize: 12, marginTop: spacing.sm, opacity: 0.6 }}>
+          Baseado em {classStats.total} respostas de alunos
+        </Text>
+      </View>
+      {/* ---------------------------------- */}
+
       <View style={{ gap: spacing.md }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ fontFamily: 'Inter-Bold', fontSize: 18, color: colors.navy900 }}>Jornada de missões</Text>
@@ -501,30 +576,42 @@ export default function TurmaDetalhesProfessor() {
       <View style={{ gap: spacing.md }}>
         <Text style={{ fontFamily: 'Inter-Bold', fontSize: 18, color: colors.navy900 }}>Alunos ({students.length})</Text>
         {students.length === 0 && <Text style={{ color: colors.navy800 }}>Nenhum aluno entrou nesta turma ainda.</Text>}
-        {students.map((student, index) => (
-          <Animated.View
-            key={student.id}
-            entering={FadeInUp.duration(350).delay(index * 60)}
-            style={{ backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.xs, ...shadows.soft }}
-          >
-            <Text style={{ fontFamily: 'Inter-Bold', color: colors.navy900 }}>{student.nome ?? 'Aluno'}</Text>
-            <TouchableOpacity
-              onPress={() => confirmRemoveStudent(student)}
-              disabled={removingStudentId === student.id}
-              style={{
-                alignSelf: 'flex-start',
-                paddingHorizontal: spacing.md,
-                paddingVertical: spacing.xs,
-                borderRadius: radii.md,
-                backgroundColor: colors.brandPink,
-              }}
+        {students.map((student, index) => {
+          const studentAvg = studentGrades[student.id];
+          return (
+            <Animated.View
+              key={student.id}
+              entering={FadeInUp.duration(350).delay(index * 60)}
+              style={{ backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.xs, ...shadows.soft }}
             >
-              <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>
-                {removingStudentId === student.id ? 'Removendo...' : 'Remover aluno'}
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
-        ))}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View>
+                  <Text style={{ fontFamily: 'Inter-Bold', color: colors.navy900 }}>{student.nome ?? 'Aluno'}</Text>
+                  {/* --- MOSTRAR NOTA INDIVIDUAL --- */}
+                  <Text style={{ fontSize: 12, marginTop: 4, color: studentAvg ? (Number(studentAvg) >= 6 ? '#00D07B' : '#FF6B6B') : colors.navy800 }}>
+                    Média: {studentAvg ? studentAvg : '-'}
+                  </Text>
+                  {/* ------------------------------- */}
+                </View>
+                
+                <TouchableOpacity
+                  onPress={() => confirmRemoveStudent(student)}
+                  disabled={removingStudentId === student.id}
+                  style={{
+                    paddingHorizontal: spacing.md,
+                    paddingVertical: spacing.xs,
+                    borderRadius: radii.md,
+                    backgroundColor: colors.brandPink,
+                  }}
+                >
+                  <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>
+                    {removingStudentId === student.id ? 'Removendo...' : 'Remover'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          );
+        })}
       </View>
 
       <View style={{ gap: spacing.md }}>
