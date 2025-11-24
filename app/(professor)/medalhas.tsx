@@ -13,6 +13,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { colors, radii, shadows, spacing } from "../../src/theme/tokens";
 import { supabase } from "../../src/lib/supabaseClient";
 import { useAuth } from "../../src/store/useAuth";
+import { Ionicons } from "@expo/vector-icons";
 
 type Medal = {
   id: string;
@@ -206,10 +207,10 @@ export default function MedalhasProfessor() {
     <View style={{ flex: 1, backgroundColor: colors.bgLight }}>
       <View style={{ padding: spacing.lg, paddingBottom: spacing.md }}>
         <Text style={{ fontFamily: "Inter-Bold", fontSize: 22, color: colors.navy900 }}>
-          Medalhas
+          Gerenciar Medalhas
         </Text>
         <Text style={{ color: colors.navy800, marginTop: spacing.xs }}>
-          Defina recompensas baseadas em acertos para motivar sua turma.
+          Crie recompensas para motivar seus alunos a acertarem mais questões.
         </Text>
       </View>
 
@@ -237,10 +238,10 @@ export default function MedalhasProfessor() {
               }}
             >
               <Text style={{ color: colors.navy900, fontFamily: "Inter-Bold", fontSize: 16 }}>
-                Nenhuma medalha ainda
+                Nenhuma medalha criada
               </Text>
               <Text style={{ color: colors.navy800, marginTop: spacing.xs, textAlign: "center" }}>
-                Crie uma medalha para incentivar os alunos a acertarem mais questões.
+                Clique no botão abaixo para criar sua primeira medalha.
               </Text>
             </View>
           }
@@ -256,11 +257,14 @@ export default function MedalhasProfessor() {
               }}
             >
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <Text style={{ color: colors.navy900, fontFamily: "Inter-Bold", fontSize: 18 }}>
-                  {item.title}
-                </Text>
-                <View style={{ backgroundColor: colors.brandPink, borderRadius: radii.full, paddingHorizontal: spacing.sm, paddingVertical: 4 }}>
-                  <Text style={{ color: colors.white, fontFamily: "Inter-Bold" }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                    <Ionicons name="trophy" size={20} color={colors.brandCyan} />
+                    <Text style={{ color: colors.navy900, fontFamily: "Inter-Bold", fontSize: 18 }}>
+                    {item.title}
+                    </Text>
+                </View>
+                <View style={{ backgroundColor: colors.bgLight, borderRadius: radii.pill, paddingHorizontal: spacing.sm, paddingVertical: 4 }}>
+                  <Text style={{ color: colors.navy800, fontFamily: "Inter-Bold" }}>
                     {item.required_correct} acertos
                   </Text>
                 </View>
@@ -300,6 +304,7 @@ export default function MedalhasProfessor() {
         />
       )}
 
+      {/* FAB Button */}
       <TouchableOpacity
         onPress={openCreateModal}
         style={{
@@ -309,10 +314,14 @@ export default function MedalhasProfessor() {
           backgroundColor: colors.brandCyan,
           paddingHorizontal: spacing.lg,
           paddingVertical: spacing.md,
-          borderRadius: radii.full,
+          borderRadius: radii.pill,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.sm,
           ...shadows.soft,
         }}
       >
+        <Ionicons name="add" size={24} color={colors.white} />
         <Text style={{ color: colors.white, fontFamily: "Inter-Bold", fontSize: 16 }}>Nova medalha</Text>
       </TouchableOpacity>
 
@@ -345,10 +354,10 @@ export default function MedalhasProfessor() {
                 value={form.title}
                 onChangeText={(text) => setForm((prev) => ({ ...prev, title: text }))}
                 placeholder="Ex: Mestre das órbitas"
-                placeholderTextColor={colors.navy500}
+                placeholderTextColor={colors.navy800}
                 style={{
                   borderWidth: 1,
-                  borderColor: colors.navy200,
+                  borderColor: colors.navy800,
                   borderRadius: radii.md,
                   padding: spacing.md,
                   color: colors.navy900,
@@ -363,10 +372,10 @@ export default function MedalhasProfessor() {
                 value={form.description}
                 onChangeText={(text) => setForm((prev) => ({ ...prev, description: text }))}
                 placeholder="Mensagem para os alunos"
-                placeholderTextColor={colors.navy500}
+                placeholderTextColor={colors.navy800}
                 style={{
                   borderWidth: 1,
-                  borderColor: colors.navy200,
+                  borderColor: colors.navy800,
                   borderRadius: radii.md,
                   padding: spacing.md,
                   color: colors.navy900,
@@ -390,10 +399,10 @@ export default function MedalhasProfessor() {
                 }
                 placeholder="10"
                 keyboardType="number-pad"
-                placeholderTextColor={colors.navy500}
+                placeholderTextColor={colors.navy800}
                 style={{
                   borderWidth: 1,
-                  borderColor: colors.navy200,
+                  borderColor: colors.navy800,
                   borderRadius: radii.md,
                   padding: spacing.md,
                   color: colors.navy900,
@@ -416,7 +425,7 @@ export default function MedalhasProfessor() {
                   paddingVertical: spacing.md,
                   borderRadius: radii.md,
                   borderWidth: 1,
-                  borderColor: colors.navy300,
+                  borderColor: colors.navy800,
                   alignItems: "center",
                 }}
               >
