@@ -24,19 +24,20 @@ export function Logo({
   const source = (() => {
     if (orientation === "vertical") {
       return bg === "white"
-        ? require("@/assets/images/logos/logo-vertical-branca.jpg")
-        : require("@/assets/images/logos/logo-vertical-azul.jpg");
+        ? require("@/assets/images/logos/idea space - logo png.png")
+        : require("@/assets/images/logos/idea space - logo branca png.png");
     }
     // horizontal
     return bg === "white"
-      ? require("@/assets/images/logos/logo branca.jpg")
-      : require("@/assets/images/logos/logo azul.jpg");
+      ? require("@/assets/images/logos/idea space - logo png.png")
+      : require("@/assets/images/logos/idea space - logo branca png.png");
   })();
 
   return (
     <Image
       source={source}
-      style={[{ width: size, height: size, resizeMode: "contain" }, style as any]}
+      style={[{ width: size, height: size }, style as any]}
+      resizeMode="contain"
       accessibilityRole="image"
       accessibilityLabel="Logo Idea Space"
     />

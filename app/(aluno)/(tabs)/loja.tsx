@@ -4,6 +4,7 @@ import { colors, radii, shadows, spacing } from "../../../src/theme/tokens";
 import { fonts, fontSizes } from "../../../src/theme/typography";
 import { supabase } from "../../../src/lib/supabaseClient";
 import { useAuth } from "../../../src/store/useAuth";
+import { SpaceBackground } from "../../../src/components/SpaceBackground";
 
 type FrameOption = { key: string; name: string; description: string; cost: number };
 
@@ -96,59 +97,90 @@ export default function LojaAluno() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bgLight }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
-      <View style={{ backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, ...shadows.soft }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: fontSizes.lg, color: colors.navy900 }}>Loja Cósmica</Text>
-        <Text style={{ marginTop: spacing.xs, color: colors.navy800 }}>
-          Use suas moedas para desbloquear bordas especiais e personalizar sua foto de perfil.
-        </Text>
-        <Text style={{ marginTop: spacing.md, fontFamily: fonts.bold, color: colors.brandCyan }}>
-          Moedas disponíveis: {coins}
-        </Text>
-      </View>
-
-      {FRAME_OPTIONS.map((option) => {
-        const unlocked = unlockedFrames.has(option.key);
-        const isActive = option.key === currentFrame;
-        return (
+    <SpaceBackground>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xl }}
+      >
+        <View
+          style={{
+            backgroundColor: colors.navy900,
+            borderRadius: radii.lg,
+            padding: spacing.lg,
+            ...shadows.soft,
+            borderWidth: 1,
+            borderColor: "#304b6b",
+            gap: spacing.xs,
+          }}
+        >
+          <Text style={{ fontFamily: fonts.bold, fontSize: fontSizes.h2, color: colors.white }}>
+            Loja Cósmica
+          </Text>
+          <Text style={{ color: colors.white, opacity: 0.8 }}>
+            Use suas moedas para desbloquear bordas espaciais e personalizar sua foto.
+          </Text>
           <View
-            key={option.key}
             style={{
+              marginTop: spacing.md,
               backgroundColor: colors.white,
-              borderRadius: radii.lg,
-              padding: spacing.lg,
-              gap: spacing.sm,
-              ...shadows.soft,
+              borderRadius: radii.md,
+              padding: spacing.md,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <View style={{ flex: 1, marginRight: spacing.sm }}>
-                <Text style={{ fontFamily: fonts.bold, fontSize: fontSizes.md, color: colors.navy900 }}>
-                  {option.name}
-                </Text>
-                <Text style={{ color: colors.navy800 }}>{option.description}</Text>
-              </View>
-              <Text style={{ fontFamily: fonts.bold, color: colors.brandCyan }}>
-                {option.cost} moedas
-              </Text>
-            </View>
-            <TouchableOpacity
-              disabled={loading}
-              onPress={() => equipFrame(option)}
+            <Text style={{ fontFamily: fonts.bold, color: colors.navy900 }}>Moedas disponíveis</Text>
+            <Text style={{ fontFamily: fonts.bold, color: colors.brandCyan, fontSize: fontSizes.lg }}>{coins}</Text>
+          </View>
+        </View>
+
+        {FRAME_OPTIONS.map((option, index) => {
+          const unlocked = unlockedFrames.has(option.key);
+          const isActive = option.key === currentFrame;
+          return (
+            <View
+              key={option.key}
               style={{
-                backgroundColor: isActive ? colors.brandPink : unlocked ? colors.brandCyan : colors.navy800,
-                paddingVertical: spacing.sm,
-                borderRadius: radii.md,
-                alignItems: "center",
+                backgroundColor: colors.white,
+                borderRadius: radii.lg,
+                padding: spacing.lg,
+                gap: spacing.sm,
+                ...shadows.soft,
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.2)",
+                opacity: loading ? 0.8 : 1,
               }}
             >
-              <Text style={{ color: colors.white, fontFamily: fonts.bold }}>
-                {isActive ? "Equipado" : unlocked ? "Equipar" : "Comprar"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        );
-      })}
-    </ScrollView>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <View style={{ flex: 1, marginRight: spacing.sm }}>
+                  <Text style={{ fontFamily: fonts.bold, fontSize: fontSizes.md, color: colors.navy900 }}>
+                    {option.name}
+                  </Text>
+                  <Text style={{ color: colors.navy800 }}>{option.description}</Text>
+                </View>
+                <Text style={{ fontFamily: fonts.bold, color: colors.brandCyan }}>
+                  {option.cost} moedas
+                </Text>
+              </View>
+              <TouchableOpacity
+                disabled={loading}
+                onPress={() => equipFrame(option)}
+                style={{
+                  backgroundColor: isActive ? colors.brandPink : unlocked ? colors.brandCyan : colors.navy800,
+                  paddingVertical: spacing.sm,
+                  borderRadius: radii.md,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: colors.white, fontFamily: fonts.bold }}>
+                  {isActive ? "Equipado" : unlocked ? "Equipar" : "Comprar"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </SpaceBackground>
   );
 }

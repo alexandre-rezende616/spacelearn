@@ -17,7 +17,7 @@ export default function RootLayout() {
   const navState = useRootNavigationState();
 
   function safeReplace(path: Href) {
-    if (!navState?.key) return;
+    // On web, navState?.key can stay undefined; avoid blocking navigation.
     requestAnimationFrame(() => router.replace(path));
   }
 

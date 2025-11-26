@@ -11,11 +11,11 @@ import { goBackOrReplace } from '../../../src/utils/navigation';
 type ClassRow = { id: string; name: string; code: string; created_at: string };
 type StudentRow = { id: string; nome: string | null };
 type MissionInfo = { id: string; title: string; description: string | null; status: 'draft' | 'published'; created_by: string | null; creatorName?: string | null };
-type MissionAssignment = { mission: MissionInfo; orderIndex: number };
+type MissionAssignment = { mission: MissionInfo; orderIndex: number; attemptLimit?: number | null };
 type MessageRow = { id: string; content: string; created_at: string };
 
 // Novo tipo para as tentativas
-type AttemptRow = { student_id: string; is_correct: boolean };
+type AttemptRow = { student_id: string; question_id: string | null; is_correct: boolean };
 
 async function copyToClipboard(text: string) {
   try {
@@ -41,6 +41,7 @@ export default function TurmaDetalhesProfessor() {
   const [removingStudentId, setRemovingStudentId] = useState<string | null>(null);
 
   const [missionModalOpen, setMissionModalOpen] = useState(false);
+  const [attemptLimitInput, setAttemptLimitInput] = useState('');
   const [availableMissions, setAvailableMissions] = useState<MissionInfo[]>([]);
   const [loadingMissions, setLoadingMissions] = useState(false);
 
@@ -108,26 +109,46 @@ export default function TurmaDetalhesProfessor() {
     try {
       const { data: attemptsData } = await supabase
         .from('attempts')
-        .select('student_id, is_correct')
+        .select('student_id, question_id, is_correct')
         .in('student_id', studentIds);
       
       const attempts = (attemptsData as AttemptRow[]) ?? [];
 
-      // Média Global
-      let globalAvg = 0;
-      if (attempts.length > 0) {
-        const totalCorrect = attempts.filter(a => a.is_correct).length;
-        globalAvg = (totalCorrect / attempts.length) * 100;
-      }
-      setClassStats({ average: globalAvg, total: attempts.length });
+      // Consolida a melhor tentativa por pergunta para não distorcer a média
+      const bestAttemptsByStudent: Record<string, Record<string, boolean>> = {};
+      attempts.forEach(({ student_id, question_id, is_correct }) => {
+        if (!question_id) return;
+        if (!bestAttemptsByStudent[student_id]) bestAttemptsByStudent[student_id] = {};
+        const prev = bestAttemptsByStudent[student_id][question_id] ?? false;
+        bestAttemptsByStudent[student_id][question_id] = prev || !!is_correct;
+      });
+
+      const totalsByStudent: Record<string, { correct: number; total: number }> = {};
+      Object.entries(bestAttemptsByStudent).forEach(([sid, answers]) => {
+        const values = Object.values(answers);
+        totalsByStudent[sid] = {
+          correct: values.filter(Boolean).length,
+          total: values.length,
+        };
+      });
+
+      const classTotals = Object.values(totalsByStudent).reduce(
+        (acc, curr) => ({
+          correct: acc.correct + curr.correct,
+          total: acc.total + curr.total,
+        }),
+        { correct: 0, total: 0 },
+      );
+
+      const globalAvg = classTotals.total > 0 ? (classTotals.correct / classTotals.total) * 100 : 0;
+      setClassStats({ average: globalAvg, total: classTotals.total });
 
       // Média Individual
       const gradesMap: Record<string, string> = {};
       studentIds.forEach((sid) => {
-        const myAttempts = attempts.filter(a => a.student_id === sid);
-        if (myAttempts.length > 0) {
-          const myCorrect = myAttempts.filter(a => a.is_correct).length;
-          const nota = (myCorrect / myAttempts.length) * 10;
+        const summary = totalsByStudent[sid];
+        if (summary?.total) {
+          const nota = (summary.correct / summary.total) * 10;
           gradesMap[sid] = nota.toFixed(1);
         }
       });
@@ -176,7 +197,7 @@ export default function TurmaDetalhesProfessor() {
     if (!classId) return;
     const { data: assignmentRows } = await supabase
       .from('mission_classes')
-      .select('mission_id,order_index')
+      .select('mission_id,order_index,max_attempts_per_question')
       .eq('class_id', classId)
       .order('order_index', { ascending: true });
     const rows = assignmentRows ?? [];
@@ -224,6 +245,7 @@ export default function TurmaDetalhesProfessor() {
       assembled.push({
         mission: { ...mission, creatorName: creatorId ? creatorMap[creatorId] ?? null : null },
         orderIndex: (row.order_index as number | null) ?? 0,
+        attemptLimit: (row.max_attempts_per_question as number | null) ?? null,
       });
     });
     assembled.sort((a, b) => a.orderIndex - b.orderIndex);
@@ -348,6 +370,7 @@ export default function TurmaDetalhesProfessor() {
   async function openMissionModal() {
     if (!classId) return;
     setMissionModalOpen(true);
+    setAttemptLimitInput('');
     setLoadingMissions(true);
     try {
       const { data: missions } = await supabase
@@ -391,16 +414,19 @@ export default function TurmaDetalhesProfessor() {
   async function addMissionToClass(mission: MissionInfo) {
     const userId = user?.id;
     if (!classId || !userId) return;
+    const rawLimit = attemptLimitInput.trim();
+    const attemptLimit = rawLimit ? Math.max(1, Number.parseInt(rawLimit, 10) || 1) : null;
     try {
       const { error } = await supabase
         .from('mission_classes')
         .upsert(
-          { mission_id: mission.id, class_id: classId, order_index: assignments.length, added_by: userId },
+          { mission_id: mission.id, class_id: classId, order_index: assignments.length, added_by: userId, max_attempts_per_question: attemptLimit },
           { onConflict: 'mission_id,class_id', ignoreDuplicates: false },
         );
       if (error) throw error;
       await loadAssignments();
       setMissionModalOpen(false);
+      setAttemptLimitInput('');
     } catch (err: any) {
       Alert.alert('Erro', err?.message ?? 'Não foi possível adicionar a missão.');
     }
@@ -531,6 +557,9 @@ export default function TurmaDetalhesProfessor() {
             <Text style={{ color: colors.navy800 }}>
               Autor: {assignment.mission.creatorName ?? 'Coordenador'}
             </Text>
+            <Text style={{ color: colors.navy800 }}>
+              Limite de tentativas: {assignment.attemptLimit ? `${assignment.attemptLimit} por pergunta` : 'Ilimitado'}
+            </Text>
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
               <TouchableOpacity
                 onPress={() => moveMission(assignment.mission.id, 'up')}
@@ -649,7 +678,13 @@ export default function TurmaDetalhesProfessor() {
       </View>
 
       <Modal visible={missionModalOpen} transparent animationType="slide" onRequestClose={() => setMissionModalOpen(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setMissionModalOpen(false)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }}
+          onPress={() => {
+            setAttemptLimitInput('');
+            setMissionModalOpen(false);
+          }}
+        >
           <View />
         </Pressable>
         <View style={{ backgroundColor: colors.white, padding: spacing.lg, gap: spacing.md, maxHeight: '70%' }}>
@@ -660,6 +695,22 @@ export default function TurmaDetalhesProfessor() {
               Nenhuma missão disponível ou todas já foram adicionadas a esta turma.
             </Text>
           )}
+          <View style={{ gap: spacing.xs }}>
+            <Text style={{ color: colors.navy800 }}>Limite de tentativas por pergunta</Text>
+            <TextInput
+              placeholder="Ex: 1 (deixe vazio para ilimitado)"
+              keyboardType="number-pad"
+              value={attemptLimitInput}
+              onChangeText={setAttemptLimitInput}
+              style={{
+                borderWidth: 1,
+                borderColor: colors.navy800,
+                borderRadius: radii.md,
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.sm,
+              }}
+            />
+          </View>
           <ScrollView style={{ maxHeight: 320 }}>
             {availableMissions.map((mission) => (
               <TouchableOpacity
@@ -687,7 +738,10 @@ export default function TurmaDetalhesProfessor() {
           </ScrollView>
 
           <TouchableOpacity
-            onPress={() => setMissionModalOpen(false)}
+            onPress={() => {
+              setAttemptLimitInput('');
+              setMissionModalOpen(false);
+            }}
             style={{ paddingVertical: spacing.md, borderRadius: radii.md, backgroundColor: colors.navy800, alignItems: 'center' }}
           >
             <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>Fechar</Text>

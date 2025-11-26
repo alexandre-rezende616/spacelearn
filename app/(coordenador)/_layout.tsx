@@ -12,7 +12,7 @@ export default function CoordenadorTabs() {
         headerTitle: '',
         headerStyle: { backgroundColor: colors.bgLight },
         headerShadowVisible: false,
-        headerRight: () => <Logo size={32} background="white" />,
+        headerLeft: () => <Logo size={32} background="blue" />,
         tabBarActiveTintColor: colors.brandCyan,
         tabBarInactiveTintColor: colors.navy800,
         tabBarStyle: { backgroundColor: colors.white },

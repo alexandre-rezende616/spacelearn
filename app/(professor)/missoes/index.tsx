@@ -32,6 +32,7 @@ export default function BibliotecaMissoesProfessor() {
   const [search, setSearch] = useState('');
   const [modalMission, setModalMission] = useState<MissionSummary | null>(null);
   const [assigning, setAssigning] = useState(false);
+  const [attemptLimitByClass, setAttemptLimitByClass] = useState<Record<string, string>>({});
 
   const filteredMissions = useMemo(() => {
     if (!search.trim()) return missions;
@@ -126,13 +127,23 @@ export default function BibliotecaMissoesProfessor() {
     try {
       setAssigning(true);
       const nextOrder = assignmentsByClass[classRow.id]?.length ?? 0;
+      const rawLimit = attemptLimitByClass[classRow.id]?.trim();
+      const attemptLimit = rawLimit ? Math.max(1, Number.parseInt(rawLimit, 10) || 1) : null;
       await assignMissionToClass({
         missionId: mission.id,
         classId: classRow.id,
         teacherId: userId,
         currentLength: nextOrder,
+        attemptLimit,
       });
       await loadData();
+      if (rawLimit === '') {
+        setAttemptLimitByClass((prev) => {
+          const clone = { ...prev };
+          delete clone[classRow.id];
+          return clone;
+        });
+      }
     } catch (err: any) {
       Alert.alert('Erro', err?.message ?? 'Não foi possível vincular a missão à turma.');
     } finally {
@@ -217,7 +228,10 @@ export default function BibliotecaMissoesProfessor() {
                   <Text style={{ color: colors.brandCyan, fontFamily: 'Inter-Bold' }}>Ver detalhes</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => setModalMission(item)}
+                  onPress={() => {
+                    setAttemptLimitByClass({});
+                    setModalMission(item);
+                  }}
                   style={{ flex: 1, paddingVertical: spacing.md, borderRadius: radii.md, backgroundColor: colors.brandCyan, alignItems: 'center' }}
                 >
                   <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>Gerenciar turmas</Text>
@@ -229,7 +243,13 @@ export default function BibliotecaMissoesProfessor() {
       />
 
       <Modal visible={!!modalMission} transparent animationType="slide" onRequestClose={() => setModalMission(null)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setModalMission(null)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }}
+          onPress={() => {
+            setAttemptLimitByClass({});
+            setModalMission(null);
+          }}
+        >
           <View />
         </Pressable>
         {modalMission && (
@@ -245,6 +265,11 @@ export default function BibliotecaMissoesProfessor() {
               )}
               {classes.map((classRow) => {
                 const assigned = isMissionAssignedToClass(modalMission.id, classRow.id);
+                const currentAssignment = assignmentsByMission[modalMission.id]?.find(
+                  (a) => a.classId === classRow.id,
+                );
+                const inputValue =
+                  attemptLimitByClass[classRow.id] ?? (currentAssignment?.attemptLimit?.toString() ?? '');
                 return (
                   <View
                     key={classRow.id}
@@ -261,6 +286,30 @@ export default function BibliotecaMissoesProfessor() {
                     <View style={{ flex: 1, marginRight: spacing.sm }}>
                       <Text style={{ fontFamily: 'Inter-Bold', color: colors.navy900 }}>{classRow.name}</Text>
                       <Text style={{ color: colors.navy800 }}>Código: {classRow.code}</Text>
+                      <Text style={{ color: colors.navy800, marginTop: 4 }}>
+                        Limite atual: {currentAssignment?.attemptLimit ? `${currentAssignment.attemptLimit} tentativa(s)` : 'Ilimitado'}
+                      </Text>
+                      <TextInput
+                        placeholder="Tentativas (vazio = ilimitado)"
+                        keyboardType="number-pad"
+                        value={inputValue}
+                        editable={!assigned}
+                        onChangeText={(text) =>
+                          setAttemptLimitByClass((prev) => ({
+                            ...prev,
+                            [classRow.id]: text,
+                          }))
+                        }
+                        style={{
+                          marginTop: spacing.xs,
+                          borderWidth: 1,
+                          borderColor: colors.navy800,
+                          borderRadius: radii.sm,
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                          backgroundColor: colors.white,
+                        }}
+                      />
                     </View>
                     <TouchableOpacity
                       disabled={assigning}

@@ -21,6 +21,7 @@ export type MissionAssignment = {
   classId: string;
   className: string;
   orderIndex: number;
+  attemptLimit?: number | null;
 };
 
 export type MissionWithClasses = MissionSummary & {

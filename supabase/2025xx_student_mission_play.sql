@@ -56,7 +56,7 @@ SET search_path = public
 AS $$
 DECLARE
   v_student uuid := auth.uid();
-  v_is_correct boolean;
+  v_chosen_correct boolean;
   v_prev_correct integer := 0;
   v_prev_xp integer := 0;
   v_prev_coins integer := 0;
@@ -65,6 +65,12 @@ DECLARE
   v_coins integer := 0;
   v_delta_xp integer := 0;
   v_delta_coins integer := 0;
+  v_total_questions integer := 0;
+  v_answered_questions integer := 0;
+  v_completed boolean := false;
+  v_attempt_limit integer := NULL;
+  v_attempt_count integer := 0;
+  v_class_id uuid;
 BEGIN
   IF v_student IS NULL THEN
     RAISE EXCEPTION 'Sessão inválida.';
@@ -88,7 +94,8 @@ BEGIN
     RAISE EXCEPTION 'Pergunta inválida para esta missão.';
   END IF;
 
-  SELECT mo.is_correct INTO v_is_correct
+  -- Determina se a alternativa escolhida é correta
+  SELECT mo.is_correct INTO v_chosen_correct
   FROM public.mission_options mo
   WHERE mo.id = p_option_id
     AND mo.question_id = p_question_id;
@@ -96,8 +103,29 @@ BEGIN
     RAISE EXCEPTION 'Alternativa inválida para esta pergunta.';
   END IF;
 
+  -- Busca turma alvo para verificar limite configurado
+  SELECT mc.class_id, mc.max_attempts_per_question
+  INTO v_class_id, v_attempt_limit
+  FROM public.mission_classes mc
+  JOIN public.enrollments e ON e.class_id = mc.class_id
+  WHERE mc.mission_id = p_mission_id
+    AND e.student_id = v_student
+  LIMIT 1;
+
+  IF v_attempt_limit IS NOT NULL THEN
+  SELECT COUNT(*) INTO v_attempt_count
+    FROM public.attempts a
+    WHERE a.mission_id = p_mission_id
+      AND a.question_id = p_question_id
+      AND a.student_id = v_student;
+
+    IF v_attempt_count >= v_attempt_limit THEN
+      RAISE EXCEPTION 'Limite de tentativas atingido para esta pergunta.';
+    END IF;
+  END IF;
+
   INSERT INTO public.attempts (mission_id, question_id, student_id, selected_option_id, is_correct)
-  VALUES (p_mission_id, p_question_id, v_student, p_option_id, v_is_correct);
+  VALUES (p_mission_id, p_question_id, v_student, p_option_id, v_chosen_correct);
 
   SELECT correct_count, xp_awarded, coins_awarded
   INTO v_prev_correct, v_prev_xp, v_prev_coins
@@ -110,9 +138,27 @@ BEGIN
     v_prev_coins := 0;
   END IF;
 
-  v_next_correct := CASE WHEN v_is_correct THEN p_current_correct + 1 ELSE p_current_correct END;
+  -- Recalcula totais com base nas melhores tentativas por pergunta
+  SELECT COUNT(*) INTO v_total_questions FROM public.mission_questions WHERE mission_id = p_mission_id;
+  WITH best AS (
+    SELECT question_id, BOOL_OR(COALESCE(a.is_correct, false)) AS got_it
+    FROM public.attempts a
+    WHERE a.mission_id = p_mission_id AND a.student_id = v_student
+    GROUP BY question_id
+  )
+  SELECT COUNT(*) INTO v_answered_questions FROM best;
 
-  IF p_completed THEN
+  WITH best AS (
+    SELECT question_id, BOOL_OR(COALESCE(a.is_correct, false)) AS got_it
+    FROM public.attempts a
+    WHERE a.mission_id = p_mission_id AND a.student_id = v_student
+    GROUP BY question_id
+  )
+  SELECT COUNT(*) INTO v_next_correct FROM best WHERE got_it = true;
+
+  v_completed := p_completed OR (v_answered_questions >= v_total_questions AND v_total_questions > 0);
+
+  IF v_completed THEN
     v_xp := v_next_correct * 10;
     v_coins := v_next_correct * 5;
   ELSE
@@ -121,7 +167,7 @@ BEGIN
   END IF;
 
   INSERT INTO public.progress (mission_id, student_id, correct_count, total_count, completed, xp_awarded, coins_awarded)
-  VALUES (p_mission_id, v_student, v_next_correct, p_total_questions, p_completed, v_xp, v_coins)
+  VALUES (p_mission_id, v_student, v_next_correct, v_total_questions, v_completed, v_xp, v_coins)
   ON CONFLICT (mission_id, student_id)
   DO UPDATE SET
     correct_count = EXCLUDED.correct_count,
@@ -141,7 +187,7 @@ BEGIN
   END IF;
 
   RETURN QUERY
-  SELECT v_is_correct, v_next_correct, p_total_questions, p_completed, v_delta_xp, v_delta_coins, COALESCE(v_prev_correct, 0);
+  SELECT v_chosen_correct, v_next_correct, v_total_questions, v_completed, v_delta_xp, v_delta_coins, COALESCE(v_prev_correct, 0);
 END;
 $$;
 

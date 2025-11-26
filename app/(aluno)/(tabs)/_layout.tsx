@@ -15,7 +15,7 @@ export default function AlunoTabs() {
         headerShadowVisible: false,
         headerBackground: () => <SpaceHeaderBackground />,
         headerTintColor: colors.white,
-        headerRight: () => <Logo size={32} background="transparent" />,
+        headerLeft: () => <Logo size={32} background="transparent" />,
         tabBarActiveTintColor: colors.brandPink,
         tabBarInactiveTintColor: colors.white,
         tabBarStyle: { backgroundColor: '#05040F', borderTopColor: 'rgba(255,255,255,0.1)' },

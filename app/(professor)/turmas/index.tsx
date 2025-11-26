@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { colors, radii, shadows, spacing } from '../../../src/theme/tokens';
 import { supabase } from '../../../src/lib/supabaseClient';
 import { useAuth } from '../../../src/store/useAuth';
+import { SpaceBackground } from '../../../src/components/SpaceBackground';
 
 type ClassRow = { id: string; name: string; code: string; created_at: string };
 
@@ -245,7 +246,7 @@ export default function TurmasProfessor() {
       <View style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.md }}>
         <TouchableOpacity
           onPress={() => setModalVisible(true)}
-          style={{ backgroundColor: colors.brandCyan, padding: spacing.lg, borderRadius: radii.lg, alignItems: 'center' }}
+          style={{ backgroundColor: colors.brandCyan, padding: spacing.lg, borderRadius: radii.lg, alignItems: 'center', ...shadows.soft }}
         >
           <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>Nova turma</Text>
         </TouchableOpacity>

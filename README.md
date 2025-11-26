@@ -46,7 +46,7 @@ App em React Native com Expo Router e Supabase, focado em conteudos de espaco/ci
 
 ## audio (sem expo-av)
 
-- Aviso: `expo-av` esta deprecado no SDK 54.
+
 - O projeto usa `expo-audio` para tocar efeitos curtos.
 - Exemplo real no app: `app/(aluno)/play/[missionId].tsx`
   - `createAudioPlayer(require('...mp3')).play()` e depois `player.remove()` para liberar.

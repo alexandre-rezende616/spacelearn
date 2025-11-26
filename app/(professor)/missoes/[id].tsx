@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +12,7 @@ type MissionRow = { id: string; title: string; description: string | null; statu
 type QuestionRow = { id: string; prompt: string; order_index: number };
 type OptionRow = { id: string; question_id: string; text: string; is_correct: boolean };
 type ClassRow = { id: string; name: string; code: string };
-type AssignedClass = { classId: string; className: string; orderIndex: number };
+type AssignedClass = { classId: string; className: string; orderIndex: number; attemptLimit?: number | null };
 
 export default function ProfessorMissionDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -27,6 +27,7 @@ export default function ProfessorMissionDetail() {
   const [assigned, setAssigned] = useState<AssignedClass[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [attemptLimitByClass, setAttemptLimitByClass] = useState<Record<string, string>>({});
 
   const missionId = useMemo(() => id ?? null, [id]);
 
@@ -106,7 +107,7 @@ export default function ProfessorMissionDetail() {
     }
     const { data: missionClassRows } = await supabase
       .from('mission_classes')
-      .select('class_id,order_index')
+      .select('class_id,order_index,max_attempts_per_question')
       .eq('mission_id', missionId)
       .in('class_id', classIds)
       .order('order_index', { ascending: true });
@@ -116,6 +117,7 @@ export default function ProfessorMissionDetail() {
         classId: row.class_id as string,
         className: cls?.name ?? 'Turma',
         orderIndex: (row.order_index as number | null) ?? 0,
+        attemptLimit: (row.max_attempts_per_question as number | null) ?? null,
       };
     });
     assignedList.sort((a, b) => a.orderIndex - b.orderIndex);
@@ -164,14 +166,29 @@ export default function ProfessorMissionDetail() {
     if (!missionId || !user?.id) return;
     try {
       setAssigning(true);
+      const rawLimit = attemptLimitByClass[classRow.id]?.trim();
+      const attemptLimit = rawLimit ? Math.max(1, Number.parseInt(rawLimit, 10) || 1) : null;
       const { error } = await supabase
         .from('mission_classes')
         .upsert(
-          { mission_id: missionId, class_id: classRow.id, order_index: assigned.length, added_by: user.id },
+          {
+            mission_id: missionId,
+            class_id: classRow.id,
+            order_index: assigned.length,
+            added_by: user.id,
+            max_attempts_per_question: attemptLimit,
+          },
           { onConflict: 'mission_id,class_id', ignoreDuplicates: false },
         );
       if (error) throw error;
       await loadAssignments();
+      if (!rawLimit) {
+        setAttemptLimitByClass((prev) => {
+          const copy = { ...prev };
+          delete copy[classRow.id];
+          return copy;
+        });
+      }
     } catch (err: any) {
       Alert.alert('Erro', err?.message ?? 'Não foi possível adicionar a missão à turma.');
     } finally {
@@ -190,6 +207,11 @@ export default function ProfessorMissionDetail() {
         .eq('class_id', classId);
       if (error) throw error;
       await loadAssignments();
+      setAttemptLimitByClass((prev) => {
+        const copy = { ...prev };
+        delete copy[classId];
+        return copy;
+      });
     } catch (err: any) {
       Alert.alert('Erro', err?.message ?? 'Não foi possível remover a missão da turma.');
     } finally {
@@ -228,7 +250,10 @@ export default function ProfessorMissionDetail() {
           </Text>
         )}
         <TouchableOpacity
-          onPress={() => setModalOpen(true)}
+          onPress={() => {
+            setAttemptLimitByClass({});
+            setModalOpen(true);
+          }}
           style={{ marginTop: spacing.md, paddingVertical: spacing.md, borderRadius: radii.md, backgroundColor: colors.brandCyan, alignItems: 'center' }}
         >
           <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>Gerenciar turmas</Text>
@@ -251,6 +276,9 @@ export default function ProfessorMissionDetail() {
             <View style={{ flex: 1, marginRight: spacing.sm }}>
               <Text style={{ fontFamily: 'Inter-Bold', color: colors.navy900 }}>{cls.className}</Text>
               <Text style={{ color: colors.navy800 }}>Posição na jornada: {cls.orderIndex + 1}</Text>
+              <Text style={{ color: colors.navy800 }}>
+                Limite de tentativas: {cls.attemptLimit ? `${cls.attemptLimit} por pergunta` : 'Ilimitado'}
+              </Text>
             </View>
             <View style={{ flexDirection: 'row', gap: spacing.sm }}>
               <TouchableOpacity
@@ -310,7 +338,13 @@ export default function ProfessorMissionDetail() {
       </View>
 
       <Modal visible={modalOpen} transparent animationType="slide" onRequestClose={() => setModalOpen(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setModalOpen(false)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }}
+          onPress={() => {
+            setAttemptLimitByClass({});
+            setModalOpen(false);
+          }}
+        >
           <View />
         </Pressable>
         <View style={{ backgroundColor: colors.white, padding: spacing.lg, gap: spacing.md }}>
@@ -320,24 +354,47 @@ export default function ProfessorMissionDetail() {
               Todas as suas turmas já possuem esta missão ou você ainda não criou turmas.
             </Text>
           )}
-          {classesNotAssigned.map((cls) => (
-            <View
-              key={cls.id}
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: colors.navy800, borderRadius: radii.md, padding: spacing.md }}
-            >
-              <View>
-                <Text style={{ fontFamily: 'Inter-Bold', color: colors.navy900 }}>{cls.name}</Text>
-                <Text style={{ color: colors.navy800 }}>Código: {cls.code}</Text>
-              </View>
-              <TouchableOpacity
-                disabled={assigning}
-                onPress={() => assignToClass(cls)}
-                style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.brandCyan }}
+          {classesNotAssigned.map((cls) => {
+            const inputValue = attemptLimitByClass[cls.id] ?? '';
+            return (
+              <View
+                key={cls.id}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: colors.navy800, borderRadius: radii.md, padding: spacing.md, gap: spacing.sm }}
               >
-                <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>Adicionar</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+                <View style={{ flex: 1, marginRight: spacing.sm }}>
+                  <Text style={{ fontFamily: 'Inter-Bold', color: colors.navy900 }}>{cls.name}</Text>
+                  <Text style={{ color: colors.navy800 }}>Código: {cls.code}</Text>
+                  <TextInput
+                    placeholder="Tentativas (vazio = ilimitado)"
+                    keyboardType="number-pad"
+                    value={inputValue}
+                    onChangeText={(text) =>
+                      setAttemptLimitByClass((prev) => ({
+                        ...prev,
+                        [cls.id]: text,
+                      }))
+                    }
+                    style={{
+                      marginTop: spacing.xs,
+                      borderWidth: 1,
+                      borderColor: colors.navy800,
+                      borderRadius: radii.sm,
+                      paddingHorizontal: spacing.sm,
+                      paddingVertical: spacing.xs,
+                      backgroundColor: colors.white,
+                    }}
+                  />
+                </View>
+                <TouchableOpacity
+                  disabled={assigning}
+                  onPress={() => assignToClass(cls)}
+                  style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.brandCyan }}
+                >
+                  <Text style={{ color: colors.white, fontFamily: 'Inter-Bold' }}>Adicionar</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
           <TouchableOpacity
             onPress={() => setModalOpen(false)}
             style={{ paddingVertical: spacing.md, borderRadius: radii.md, backgroundColor: colors.navy800, alignItems: 'center' }}

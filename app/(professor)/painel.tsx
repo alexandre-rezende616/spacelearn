@@ -100,16 +100,23 @@ export default function PainelProfessor() {
 
   return (
     <ScrollView
-      contentContainerStyle={{ padding: spacing.lg }}
+      contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl }}
       style={{ flex: 1, backgroundColor: colors.bgLight }}
     >
-      {/* Cabeçalho */}
-      <View style={{ marginBottom: spacing.lg }}>
-        <Text style={{ fontFamily: "Inter-Bold", fontSize: 24, color: colors.navy800 }}>
+      <View
+        style={{
+          backgroundColor: colors.navy900,
+          padding: spacing.lg,
+          borderRadius: radii.lg,
+          marginBottom: spacing.lg,
+          ...shadows.soft,
+        }}
+      >
+        <Text style={{ fontFamily: "Inter-Bold", fontSize: 22, color: colors.white }}>
           {`Bem-vindo, Prof. ${nome ?? "..."}!`}
         </Text>
-        <Text style={{ marginTop: spacing.xs, color: colors.navy800 }}>
-          Painel do Professor
+        <Text style={{ marginTop: spacing.xs, color: colors.white, opacity: 0.8 }}>
+          Visão geral da sua operação.
         </Text>
       </View>
 
@@ -133,6 +140,8 @@ export default function PainelProfessor() {
               borderRadius: radii.lg,
               padding: spacing.lg,
               ...shadows.soft,
+              borderWidth: 1,
+              borderColor: colors.bgLight,
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: spacing.sm }}>
@@ -150,7 +159,6 @@ export default function PainelProfessor() {
                 <Ionicons name={c.icon} color={colors.white} size={20} />
               </View>
               <Text
-                
                 style={{ fontFamily: "Inter-Bold", color: colors.navy800, flex: 1, flexWrap: "wrap", minWidth: 0 }}
               >
                 {c.title}
@@ -163,7 +171,7 @@ export default function PainelProfessor() {
 
       {/* Ações rápidas */}
       <View style={{ marginBottom: spacing.md }}>
-        <Text style={{ fontFamily: "Inter-Bold", fontSize: 18, color: colors.navy800, marginBottom: spacing.md }}>
+        <Text style={{ fontFamily: "Inter-Bold", fontSize: 18, color: colors.navy900, marginBottom: spacing.md }}>
           Ações rápidas
         </Text>
 
@@ -175,6 +183,7 @@ export default function PainelProfessor() {
               paddingVertical: spacing.lg,
               borderRadius: radii.lg,
               alignItems: "center",
+              ...shadows.soft,
             }}
           >
             <Text style={{ color: colors.white, fontFamily: "Inter-Bold", fontSize: 16 }}>Criar missão</Text>
@@ -187,8 +196,9 @@ export default function PainelProfessor() {
               paddingVertical: spacing.lg,
               borderRadius: radii.lg,
               alignItems: "center",
-              borderWidth: 2,
+              borderWidth: 1,
               borderColor: colors.brandCyan,
+              ...shadows.soft,
             }}
           >
             <Text style={{ color: colors.navy800, fontFamily: "Inter-Bold", fontSize: 16 }}>Ver turmas</Text>
@@ -201,6 +211,7 @@ export default function PainelProfessor() {
               paddingVertical: spacing.lg,
               borderRadius: radii.lg,
               alignItems: "center",
+              ...shadows.soft,
             }}
           >
             <Text style={{ color: colors.white, fontFamily: "Inter-Bold", fontSize: 16 }}>Gerenciar medalhas</Text>

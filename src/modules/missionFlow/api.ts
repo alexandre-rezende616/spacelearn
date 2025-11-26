@@ -93,11 +93,11 @@ export async function fetchProfessorLibrary(teacherId: string): Promise<Professo
   }));
   const classIds = classes.map((cls) => cls.id);
 
-  let assignments: { mission_id: string; class_id: string; order_index: number | null }[] = [];
+  let assignments: { mission_id: string; class_id: string; order_index: number | null; max_attempts_per_question?: number | null }[] = [];
   if (classIds.length) {
     const { data: assRows, error: assErr } = await supabase
       .from('mission_classes')
-      .select('mission_id,class_id,order_index')
+      .select('mission_id,class_id,order_index,max_attempts_per_question')
       .in('class_id', classIds);
     if (assErr) throw assErr;
     assignments = assRows ?? [];
@@ -136,6 +136,7 @@ export async function fetchProfessorLibrary(teacherId: string): Promise<Professo
       classId: assignment.class_id,
       className: classInfo?.name ?? 'Turma',
       orderIndex: assignment.order_index ?? 0,
+      attemptLimit: assignment.max_attempts_per_question ?? null,
     };
   });
 
@@ -147,14 +148,16 @@ export async function assignMissionToClass(params: {
   classId: string;
   teacherId: string;
   currentLength: number;
+  attemptLimit?: number | null;
 }) {
-  const { missionId, classId, teacherId, currentLength } = params;
+  const { missionId, classId, teacherId, currentLength, attemptLimit } = params;
   const { error } = await supabase.from('mission_classes').upsert(
     {
       mission_id: missionId,
       class_id: classId,
       order_index: currentLength,
       added_by: teacherId,
+      max_attempts_per_question: attemptLimit ?? null,
     },
     { onConflict: 'mission_id,class_id', ignoreDuplicates: false },
   );

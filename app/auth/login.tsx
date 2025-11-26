@@ -1,9 +1,9 @@
 import { Link } from "expo-router";
 import { useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import Logo from "../../components/Logo";
 import { supabase } from "../../src/lib/supabaseClient";
 import { colors, radii, spacing } from "../../src/theme/tokens";
-import Logo from "../../components/Logo";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -67,7 +67,7 @@ export default function LoginScreen() {
     <View style={{ flex: 1, backgroundColor: colors.bgLight, justifyContent: "center", padding: spacing.lg }}>
       <View style={{ alignItems: "center", marginBottom: spacing.lg }}>
         {/* Vertical logo suited for white background, larger for the login */}
-        <Logo size={96} background="white" orientation="vertical" />
+        <Logo size={200} background="white" orientation="vertical" />
       </View>
       <Text style={{ fontSize: 28, fontFamily: "Inter-Bold", color: colors.navy900, textAlign: "center", marginBottom: spacing.lg }}>
         Bem-vindo(a)
