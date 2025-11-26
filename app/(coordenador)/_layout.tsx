@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import Logo from '../../components/Logo';
 import { colors } from '../../src/theme/tokens';
+import { SpaceHeaderBackground } from '../../src/components/SpaceHeaderBackground';
 
 export default function CoordenadorTabs() {
   return (
@@ -10,8 +11,9 @@ export default function CoordenadorTabs() {
       screenOptions={{
         headerShown: true,
         headerTitle: '',
-        headerStyle: { backgroundColor: colors.bgLight },
         headerShadowVisible: false,
+        headerTintColor: colors.white,
+        headerBackground: () => <SpaceHeaderBackground />,
         headerLeft: () => <Logo size={32} background="blue" />,
         tabBarActiveTintColor: colors.brandCyan,
         tabBarInactiveTintColor: colors.navy800,
