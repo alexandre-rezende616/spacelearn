@@ -66,12 +66,6 @@ App em React Native com Expo Router e Supabase, focado em conteudos de espaco/ci
   - Detecta sessao e direciona por `role` (aluno/professor/coordenador) no load inicial e quando a sessao mudar.
   - Sem sessao: vai para `/auth/login`.
 
-## audio (sem expo-av)
-
-
-- O projeto usa `expo-audio` para tocar efeitos curtos.
-- Exemplo real no app: `app/(aluno)/play/[missionId].tsx`
-  - `createAudioPlayer(require('...mp3')).play()` e depois `player.remove()` para liberar.
 
 ## Scripts uteis
 
